@@ -27,4 +27,4 @@ customFactorial = function(x) {
   return(factorial)
 }
 
-print(factorial(6))
+print(customFactorial(6))
