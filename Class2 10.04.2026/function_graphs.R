@@ -36,7 +36,7 @@ points(x, h(x), col="blue")
 doubleInput = function(x) {
   return(2*x);
 }
-
+plot(x,doubleInput(x))
 print(doubleInput(7))
 
 # Exercise Convert #2
@@ -45,6 +45,7 @@ multiplyAndAdd = function(x) {
   return(3*x+4)
 }
 
+plot(x,multiplyAndAdd(x))
 print(multiplyAndAdd(9))
 
 # Exercise Convert #3
@@ -56,9 +57,22 @@ conditionalFunc = function(x) {
     return(4)
   }
 }
+# If else doesn't work with vectors
+# One method to do it
+conditionalFuncVector = Vectorize(conditionalFunc)
+plot(x,conditionalFuncVector(x))
+
+# Second method to do it
+plot(x, sapply(x,conditionalFunc))
 
 print(conditionalFunc(1.5))
 print(conditionalFunc(6))
+
+## Plot Everything
+
+plot(x,doubleInput(x), ylim=c(-10,10), xlim=c(-10,10))
+points(x, multiplyAndAdd(x), col="red")
+points(x, sapply(x,conditionalFunc), col="blue")
 
 # Exercise Convert #4
 
@@ -73,5 +87,5 @@ mobileRateScalar = function (d) {
 mobileRate = Vectorize(mobileRateScalar)
 
 
-x = c(seq(0,25), seq(25,35,0.2))
-plot(x,mobileRate(x), type="s", xlab="GB", ylab="Price in EUR")
+xx = c(seq(0,25), seq(25,35,0.2))
+plot(xx,mobileRate(xx), type="s", xlab="GB", ylab="Price in EUR")
