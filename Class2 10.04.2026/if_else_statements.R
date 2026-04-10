@@ -12,10 +12,14 @@ if(y>4) {
 
 # Exercise 1 - check for positive, negative, 0
 
-if(y>0) {
-  print("y is positive")
-} else if(y<0) {
-  print("y is negative")
-} else {
-  print("y is zero")
+is_positive = function(y) {
+  if(y>0) {
+    print("y is positive")
+  } else if(y<0) {
+    print("y is negative")
+  } else {
+    print("y is zero")
+  }
 }
+
+is_positive(5)
