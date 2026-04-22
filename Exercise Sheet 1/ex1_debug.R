@@ -12,7 +12,7 @@ v1 + v2
 # use == for comparison
 y <- "a"
 if ( y == 3 ) {
-  print ( "y␣ i s ␣3" )
+  print ( "y is 3" )
 }
 
 # This one had a misspelled variable in print
