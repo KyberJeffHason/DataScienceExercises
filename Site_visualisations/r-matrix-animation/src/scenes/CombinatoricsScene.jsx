@@ -356,7 +356,7 @@ const FORMULA_DATA = {
     question: "In how many different orders can you arrange all n items?",
     mathFormula: { type: "linear", expr: "n! = n × (n−1) × (n−2) × … × 1" },
     plugIn: "4! = 4 × 3 × 2 × 1 = 24",
-    what: "Factorial answers: "if I have n things, how many ways can I line them all up?" It multiplies every whole number from n down to 1.",
+    what: "Factorial answers the question: if I have n things, how many ways can I line them all up? It multiplies every whole number from n down to 1.",
     example: "📚 4 books can be arranged on a shelf in 4! = 24 different orders.",
     keyIdea: "Factorial grows surprisingly fast — 10! = 3,628,800. Even 10 items can be arranged in over 3 million different ways!",
     rCode: `# R has a built-in function for this:
