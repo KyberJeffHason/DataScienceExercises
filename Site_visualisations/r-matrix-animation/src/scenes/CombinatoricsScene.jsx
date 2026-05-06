@@ -413,57 +413,87 @@ factorial(n) / (factorial(r) * factorial(n - r))
   },
 };
 
-// ─── comparison table (all 5 formulas including with-repetition) ──────────────
+// ─── decision grid data ───────────────────────────────────────────────────────
+// 2×2 grid: rows = order matters?, cols = repetition allowed?
+const DECISION_GRID = [
+  //          repeat = No                              repeat = Yes
+  /* order */ { formula: "P(n, r)",    r: "factorial(n)/factorial(n-r)", result: "P(4,2) = 12",  color: "bg-sky-50 border-sky-200",      badge: "bg-sky-100 text-sky-800"    },
+  /* order */ { formula: "nʳ",         r: "n^r",                         result: "4² = 16",      color: "bg-amber-50 border-amber-200",  badge: "bg-amber-100 text-amber-800" },
+  /* no ord */{ formula: "C(n, r)",    r: "choose(n, r)",                result: "C(4,2) = 6",   color: "bg-emerald-50 border-emerald-200", badge: "bg-emerald-100 text-emerald-800" },
+  /* no ord */{ formula: "C(n+r−1,r)", r: "choose(n+r-1, r)",           result: "C(5,2) = 10",  color: "bg-rose-50 border-rose-200",    badge: "bg-rose-100 text-rose-800"   },
+];
+
+// ─── full reference cards ─────────────────────────────────────────────────────
 const ALL_FORMULAS = [
   {
     name: "Factorial",
     symbol: "n!",
     formula: "n × (n−1) × … × 1",
     r: "factorial(n)",
-    example: "4! = 24",
-    note: "All orderings of n items",
-    order: "Yes",
-    repeat: "No",
+    order: true,
+    repeat: false,
+    scenario: "Arranging all items in a line",
+    realExample: "How many ways can 4 students stand in a queue?",
+    calc: "4! = 4 × 3 × 2 × 1 = 24 queues",
+    rSnippet: "factorial(4)  #> 24",
+    color: "border-violet-200",
+    badge: "bg-violet-100 text-violet-800",
   },
   {
     name: "Permutations",
     symbol: "P(n, r)",
-    formula: "n! / (n−r)!",
+    formula: "n! / (n − r)!",
     r: "factorial(n) / factorial(n-r)",
-    example: "P(4,2) = 12",
-    note: "Ordered selection of r from n",
-    order: "Yes",
-    repeat: "No",
+    order: true,
+    repeat: false,
+    scenario: "Picking r items in order, no repeats",
+    realExample: "How many ways to award gold & silver to 2 of 5 runners?",
+    calc: "P(5, 2) = 5×4 = 20 podium results",
+    rSnippet: "factorial(5) / factorial(3)  #> 20",
+    color: "border-sky-200",
+    badge: "bg-sky-100 text-sky-800",
   },
   {
-    name: "Perm. with repetition",
+    name: "Permutations with repetition",
     symbol: "nʳ",
     formula: "n × n × … × n  (r times)",
     r: "n^r",
-    example: "4² = 16",
-    note: "Ordered selection, same item can be picked again",
-    order: "Yes",
-    repeat: "Yes",
+    order: true,
+    repeat: true,
+    scenario: "Picking r items in order, same item allowed again",
+    realExample: "How many 3-digit PINs can you make from digits 0–9?",
+    calc: "10³ = 10 × 10 × 10 = 1 000 possible PINs",
+    rSnippet: "10^3  #> 1000",
+    color: "border-amber-200",
+    badge: "bg-amber-100 text-amber-800",
   },
   {
     name: "Combinations",
     symbol: "C(n, r)",
-    formula: "n! / (r! × (n−r)!)",
+    formula: "n! / (r! × (n − r)!)",
     r: "choose(n, r)",
-    example: "C(4,2) = 6",
-    note: "Unordered selection of r from n",
-    order: "No",
-    repeat: "No",
+    order: false,
+    repeat: false,
+    scenario: "Choosing r items, order does not matter, no repeats",
+    realExample: "How many ways to pick 3 pizza toppings from a menu of 6?",
+    calc: "C(6, 3) = 20 different topping combos",
+    rSnippet: "choose(6, 3)  #> 20",
+    color: "border-emerald-200",
+    badge: "bg-emerald-100 text-emerald-800",
   },
   {
-    name: "Comb. with repetition",
+    name: "Combinations with repetition",
     symbol: "C(n+r−1, r)",
     formula: "(n+r−1)! / (r! × (n−1)!)",
     r: "choose(n + r - 1, r)",
-    example: "C(5,2) = 10",
-    note: "Unordered selection, same item can appear multiple times",
-    order: "No",
-    repeat: "Yes",
+    order: false,
+    repeat: true,
+    scenario: "Choosing r items, order does not matter, same item allowed again",
+    realExample: "How many ways to pick 2 scoops from 3 ice-cream flavours (you can pick the same flavour twice)?",
+    calc: "C(3+2−1, 2) = C(4,2) = 6 combinations",
+    rSnippet: "choose(3 + 2 - 1, 2)  #> 6",
+    color: "border-rose-200",
+    badge: "bg-rose-100 text-rose-800",
   },
 ];
 
@@ -657,66 +687,117 @@ export function CombinatoricsScene() {
         </AnimatePresence>
       </div>
 
-      {/* ── all 5 formulas reference table ── */}
+      {/* ── decision grid ── */}
       <div className="rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">All 5 combinatorics formulas at a glance</h2>
+        <h2 className="text-lg font-bold">Which formula do I use?</h2>
         <p className="mt-1 text-sm text-slate-500 mb-4">
-          The two questions to ask: does order matter? Can you pick the same item more than once?
+          Answer two questions about your problem and read off the formula.
         </p>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200">
-                <th className="text-left py-2 pr-4 font-semibold text-slate-700">Formula</th>
-                <th className="text-left py-2 pr-4 font-semibold text-slate-700">Maths</th>
-                <th className="text-left py-2 pr-4 font-semibold text-slate-700">R code</th>
-                <th className="text-center py-2 pr-4 font-semibold text-slate-700">Order?</th>
-                <th className="text-center py-2 pr-4 font-semibold text-slate-700">Repeat?</th>
-                <th className="text-left py-2 font-semibold text-slate-700">Example</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ALL_FORMULAS.map((row, i) => (
-                <tr key={i} className={`border-b border-slate-100 ${i % 2 === 0 ? "bg-slate-50" : ""}`}>
-                  <td className="py-2.5 pr-4">
-                    <span className="font-semibold text-slate-900">{row.name}</span>
-                    <br />
-                    <code className="text-xs font-mono text-violet-700">{row.symbol}</code>
-                  </td>
-                  <td className="py-2.5 pr-4 font-mono text-xs text-slate-600">{row.formula}</td>
-                  <td className="py-2.5 pr-4">
-                    <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-mono text-slate-800">
-                      {row.r}
-                    </code>
-                  </td>
-                  <td className="py-2.5 pr-4 text-center">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                      row.order === "Yes"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-slate-100 text-slate-500"
-                    }`}>
-                      {row.order}
-                    </span>
-                  </td>
-                  <td className="py-2.5 pr-4 text-center">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                      row.repeat === "Yes"
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-slate-100 text-slate-500"
-                    }`}>
-                      {row.repeat}
-                    </span>
-                  </td>
-                  <td className="py-2.5 text-slate-500">
-                    <code className="font-mono text-xs">{row.example}</code>
-                    <br />
-                    <span className="text-xs">{row.note}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* 2×2 grid with axis labels */}
+        <div className="grid grid-cols-[auto_1fr_1fr] gap-2 text-sm">
+          {/* header row */}
+          <div />
+          <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-center font-semibold text-amber-800">
+            🔁 Repetition allowed
+          </div>
+          <div className="rounded-xl bg-slate-100 border border-slate-200 px-3 py-2 text-center font-semibold text-slate-600">
+            🚫 No repetition
+          </div>
+
+          {/* row: order matters */}
+          <div className="flex items-center rounded-xl bg-sky-50 border border-sky-200 px-2 py-3 font-semibold text-sky-800 writing-mode-vertical text-center">
+            <span className="[writing-mode:vertical-rl] rotate-180 text-xs leading-tight">
+              ✅ Order matters
+            </span>
+          </div>
+          {/* order=yes, repeat=yes */}
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-1">
+            <p className="font-mono font-bold text-amber-900">nʳ</p>
+            <p className="text-xs text-amber-700">Permutations with repetition</p>
+            <code className="text-xs rounded bg-white px-1.5 py-0.5 text-slate-700">n^r</code>
+            <p className="text-xs text-slate-500 pt-1">e.g. 3-digit PIN from 0–9: 10³ = 1 000</p>
+          </div>
+          {/* order=yes, repeat=no */}
+          <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 space-y-1">
+            <p className="font-mono font-bold text-sky-900">P(n, r)</p>
+            <p className="text-xs text-sky-700">Permutations (no repetition)</p>
+            <code className="text-xs rounded bg-white px-1.5 py-0.5 text-slate-700">factorial(n)/factorial(n-r)</code>
+            <p className="text-xs text-slate-500 pt-1">e.g. Gold & silver from 5 runners: P(5,2) = 20</p>
+          </div>
+
+          {/* row: order doesn't matter */}
+          <div className="flex items-center rounded-xl bg-slate-100 border border-slate-200 px-2 py-3 font-semibold text-slate-600">
+            <span className="[writing-mode:vertical-rl] rotate-180 text-xs leading-tight">
+              ❌ Order doesn't matter
+            </span>
+          </div>
+          {/* order=no, repeat=yes */}
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 space-y-1">
+            <p className="font-mono font-bold text-rose-900">C(n+r−1, r)</p>
+            <p className="text-xs text-rose-700">Combinations with repetition</p>
+            <code className="text-xs rounded bg-white px-1.5 py-0.5 text-slate-700">choose(n+r-1, r)</code>
+            <p className="text-xs text-slate-500 pt-1">e.g. 2 ice-cream scoops from 3 flavours: C(4,2) = 6</p>
+          </div>
+          {/* order=no, repeat=no */}
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 space-y-1">
+            <p className="font-mono font-bold text-emerald-900">C(n, r)</p>
+            <p className="text-xs text-emerald-700">Combinations (no repetition)</p>
+            <code className="text-xs rounded bg-white px-1.5 py-0.5 text-slate-700">choose(n, r)</code>
+            <p className="text-xs text-slate-500 pt-1">e.g. 3 pizza toppings from 6: C(6,3) = 20</p>
+          </div>
+        </div>
+
+        <p className="mt-3 text-xs text-slate-400">
+          Factorial <code className="font-mono">n!</code> is a special case of permutations where you use all n items
+          ({" "}<code className="font-mono">r = n</code>, no repetition): <code className="font-mono">factorial(n)</code>.
+        </p>
+      </div>
+
+      {/* ── all 5 formula cards ── */}
+      <div className="rounded-2xl bg-white p-5 shadow-sm">
+        <h2 className="text-lg font-bold">All 5 formulas with examples</h2>
+        <p className="mt-1 text-sm text-slate-500 mb-4">
+          Each card shows the formula, a real-world example, and the R code.
+        </p>
+
+        <div className="space-y-3">
+          {ALL_FORMULAS.map((row) => (
+            <div key={row.name} className={`rounded-2xl border-2 ${row.color} p-4`}>
+              <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+                <div>
+                  <span className="font-bold text-slate-900">{row.name}</span>
+                  <code className={`ml-2 rounded-full px-2 py-0.5 text-xs font-mono font-semibold ${row.badge}`}>
+                    {row.symbol}
+                  </code>
+                </div>
+                <div className="flex gap-2 text-xs">
+                  <span className={`rounded-full px-2 py-0.5 font-semibold ${row.order ? "bg-sky-100 text-sky-700" : "bg-slate-100 text-slate-500"}`}>
+                    {row.order ? "✅ Order matters" : "❌ Order ignored"}
+                  </span>
+                  <span className={`rounded-full px-2 py-0.5 font-semibold ${row.repeat ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
+                    {row.repeat ? "🔁 Repeats OK" : "🚫 No repeats"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3 text-sm">
+                <div className="rounded-xl bg-white p-3 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">Formula</p>
+                  <code className="font-mono text-slate-800 font-bold">{row.formula}</code>
+                </div>
+                <div className="rounded-xl bg-white p-3 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">Real example</p>
+                  <p className="text-slate-600 text-xs">{row.realExample}</p>
+                  <p className="mt-1 font-semibold text-slate-800 text-xs">{row.calc}</p>
+                </div>
+                <div className="rounded-xl bg-slate-950 p-3 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">R</p>
+                  <code className="font-mono text-slate-100 text-xs">{row.rSnippet}</code>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </>
