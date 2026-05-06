@@ -147,7 +147,7 @@ export function DollarSelectionScene() {
           What does <code className="rounded bg-slate-200 px-2 py-1 font-mono text-2xl">$</code> do in R?
         </h1>
         <p className="mt-2 text-slate-600">
-          It pulls a single column out of a data frame and returns it as a vector.
+          Think of a data frame like a spreadsheet. <code className="rounded bg-slate-200 px-1 font-mono">$</code> lets you grab one whole column from it by name.
         </p>
       </div>
 
@@ -203,15 +203,14 @@ export function DollarSelectionScene() {
                 extracts the <span className="font-mono">{selected}</span> column
               </h2>
               <p className="mt-2 text-slate-600">
-                The result is a plain vector that keeps the column's original type
-                (<code className="rounded bg-slate-100 px-1 py-0.5 font-mono">
+                You get back a simple list of all the values in that column — here they are{" "}
+                <code className="rounded bg-slate-100 px-1 py-0.5 font-mono">
                   {dfColumns.find((c) => c.key === selected).type}
-                </code>
-                ). The data frame itself is not modified.
+                </code>{" "}
+                values. The original data frame stays exactly as it was, nothing is deleted or changed.
               </p>
               <p className="mt-3 text-sm text-slate-500">
-                <code className="rounded bg-slate-100 px-1 py-0.5 font-mono">$</code> looks up the column by name —
-                so you write the name unquoted, exactly as it appears in the data frame.
+                Just write the column name after <code className="rounded bg-slate-100 px-1 py-0.5 font-mono">$</code> — no quotes needed, exactly as it appears in the table.
               </p>
             </motion.div>
 
@@ -221,10 +220,11 @@ export function DollarSelectionScene() {
       </Card>
 
       <div className="rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">Key idea & alternatives</h2>
+        <h2 className="text-lg font-bold">The key thing to remember</h2>
         <p className="mt-2 text-slate-600">
-          <code className="rounded bg-slate-100 px-1 py-0.5 font-mono">$</code> works on data frames and lists. For
-          column names with spaces or special characters, use one of these instead — they all return the same vector:
+          <code className="rounded bg-slate-100 px-1 py-0.5 font-mono">$</code> is the quickest way to grab a column.
+          If your column name has a space or a special character in it, use double brackets instead.
+          All three lines below do exactly the same thing:
         </p>
         <ul className="mt-3 space-y-1 text-sm text-slate-600">
           <li>

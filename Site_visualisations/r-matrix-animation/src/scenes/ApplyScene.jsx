@@ -207,17 +207,17 @@ function MapplyViz({ activeIndex }) {
 // ─── explanations ─────────────────────────────────────────────────────────────
 const explanations = {
   sapply: {
-    title: "sapply — apply & simplify",
-    what: "Loops over every element of a vector (or list) and applies a function. Returns the simplest possible structure: a named vector when all results are length-1 scalars.",
-    when: "Use sapply when your input is a vector and you expect one value back per element.",
-    gotcha: "If results have different lengths, sapply silently falls back to a list — use vapply for type-safe output in production code.",
+    title: "sapply — do something to every item",
+    what: "You give it a list of values and a function (a recipe). It runs that function on each value one by one and gives you back a new list of results. The 's' stands for 'simplify' — it tidies up the output into a plain vector for you.",
+    when: "Use it whenever you want to transform every item in a list the same way. For example: squaring every number, or converting every name to upper case.",
+    gotcha: "If each result has a different size, sapply returns a messier structure instead of a clean vector. If that surprises you, use vapply which always gives back a vector of the type you expect.",
     signature: "sapply(X, FUN, ...)",
   },
   mapply: {
-    title: "mapply — multi-input sapply",
-    what: "Like sapply but takes multiple vectors as inputs, processing them element-wise in parallel. The function receives one element from each vector on every iteration.",
-    when: "Use mapply when your function needs two or more vectors processed together — think of it as a vectorised Map.",
-    gotcha: "Argument order matters: FUN comes first, then the vectors. Shorter vectors are recycled to match the longest one.",
+    title: "mapply — do something using two lists at once",
+    what: "Like sapply, but your function needs two (or more) lists as input. It picks the first item from each list, runs the function, then the second item from each list, and so on — like a zip.",
+    when: "Use it when your calculation needs a value from list A and a value from list B at the same time. For example: adding matching numbers from two lists.",
+    gotcha: "The function comes first, then the lists — the opposite order to sapply. If one list is shorter than the other, R will repeat (recycle) the shorter one from the beginning.",
     signature: "mapply(FUN, ..., MoreArgs = NULL)",
   },
 };
@@ -260,7 +260,7 @@ export function ApplyScene() {
           <code className="rounded bg-slate-200 px-2 py-1 font-mono">mapply</code>
           {" in R"}
         </h1>
-        <p className="mt-2 text-slate-600">Apply a function across a vector — one element at a time.</p>
+        <p className="mt-2 text-slate-600">Instead of writing a loop yourself, these functions do the looping for you — once per item in your list.</p>
       </div>
 
       <Card className="rounded-2xl shadow-lg">
@@ -367,11 +367,11 @@ export function ApplyScene() {
                   <p className="text-slate-600 text-sm">{info.what}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">When to use it</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">When would I use it?</p>
                   <p className="text-slate-600 text-sm">{info.when}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">Watch out</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">Common beginner trip-up</p>
                   <p className="text-slate-600 text-sm">{info.gotcha}</p>
                 </div>
                 <code className="block rounded-lg bg-slate-100 px-3 py-2 font-mono text-sm text-slate-800">
@@ -395,12 +395,13 @@ export function ApplyScene() {
       </Card>
 
       <div className="rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">The apply family — quick comparison</h2>
-        <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+        <h2 className="text-lg font-bold">The apply family — what's the difference?</h2>
+        <p className="mt-1 mb-3 text-sm text-slate-500">All three do the same core job (run a function on every item) — they just differ in what they return and how many inputs they take.</p>
+        <div className="grid gap-2 text-sm sm:grid-cols-3">
           {[
-            { fn: "sapply(X, f)", desc: "One vector in, simplified vector out." },
-            { fn: "lapply(X, f)", desc: "One vector in, always a list out." },
-            { fn: "mapply(f, ...)", desc: "Multiple vectors in, one result per position." },
+            { fn: "sapply(X, f)", desc: "One list in → gives back a clean vector of results. Great for beginners." },
+            { fn: "lapply(X, f)", desc: "One list in → always gives back a list, even if results are simple numbers." },
+            { fn: "mapply(f, ...)", desc: "Two or more lists in → pairs up items and gives back one result per pair." },
           ].map(({ fn, desc }) => (
             <div key={fn} className="rounded-xl bg-slate-100 p-3">
               <code className="font-mono text-slate-900 font-semibold">{fn}</code>

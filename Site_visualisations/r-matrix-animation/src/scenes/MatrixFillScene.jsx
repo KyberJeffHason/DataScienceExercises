@@ -143,16 +143,16 @@ export function MatrixFillScene() {
     setStep(0);
   }, [byrow]);
 
-  const title = byrow ? "byrow = TRUE: fill across each row" : "Default in R: fill down each column";
+  const title = byrow ? "byrow = TRUE — fills left to right, row by row" : "Default — fills top to bottom, column by column";
   const explanation = byrow
-    ? "With byrow = TRUE, R places 1, 2, 3 across the first row, then 4, 5, 6 across the second row."
-    : "By default, R fills matrices column by column: 1, 2 go down the first column, then 3, 4, then 5, 6.";
+    ? "When you add byrow = TRUE, R fills the first row completely (1, 2, 3) before moving to the next row (4, 5, 6). Think of it like reading a book — left to right, line by line."
+    : "By default, R fills a matrix going downwards: it fills the first column (1, 2), then the second (3, 4), then the third (5, 6). Think of it like filling in a form from top to bottom.";
 
   return (
     <>
       <div className="text-center">
         <h1 className="text-3xl font-bold tracking-tight">How R fills a matrix</h1>
-        <p className="mt-2 text-slate-600">Same vector, same dimensions — different fill direction.</p>
+        <p className="mt-2 text-slate-600">The same six numbers, the same grid size — but the order R places them changes everything.</p>
       </div>
 
       <Card className="rounded-2xl shadow-lg">
@@ -196,7 +196,7 @@ export function MatrixFillScene() {
                 <h2 className="text-xl font-bold">{title}</h2>
                 <p className="mt-2 text-slate-600">{explanation}</p>
                 <p className="mt-3 text-sm text-slate-500">
-                  The active number is highlighted in both the input vector and the matrix cell where R places it.
+                  The dark highlighted number shows which value R is placing right now, and where it lands in the grid.
                 </p>
               </motion.div>
 
@@ -209,10 +209,11 @@ export function MatrixFillScene() {
       </Card>
 
       <div className="rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">Key idea</h2>
+        <h2 className="text-lg font-bold">The key thing to remember</h2>
         <p className="mt-2 text-slate-600">
-          In R, <code className="rounded bg-slate-100 px-1 py-0.5">matrix()</code> fills by column unless you add
-          <code className="rounded bg-slate-100 px-1 py-0.5"> byrow = TRUE</code>. This is why the same values can appear in different positions.
+          R always fills a matrix column by column unless you tell it not to. Adding{" "}
+          <code className="rounded bg-slate-100 px-1 py-0.5">byrow = TRUE</code> switches to row-by-row.
+          This matters because the same numbers will end up in completely different positions depending on which direction you choose.
         </p>
       </div>
     </>
