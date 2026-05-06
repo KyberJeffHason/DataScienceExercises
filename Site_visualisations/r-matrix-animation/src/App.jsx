@@ -2,17 +2,20 @@ import { useState } from "react";
 import { MatrixFillScene } from "./scenes/MatrixFillScene.jsx";
 import { DollarSelectionScene } from "./scenes/DollarSelectionScene.jsx";
 import { ApplyScene } from "./scenes/ApplyScene.jsx";
+import { CombinatoricsScene } from "./scenes/CombinatoricsScene.jsx";
 
 const tabs = [
-  { id: "matrix", label: "matrix() fill order" },
-  { id: "dollar", label: "$ column selection" },
-  { id: "apply",  label: "sapply & mapply" },
+  { id: "matrix",        label: "matrix() fill order" },
+  { id: "dollar",        label: "$ column selection"  },
+  { id: "apply",         label: "sapply & mapply"     },
+  { id: "combinatorics", label: "Combinatorics"       },
 ];
 
 const scenes = {
-  matrix: <MatrixFillScene />,
-  dollar: <DollarSelectionScene />,
-  apply:  <ApplyScene />,
+  matrix:        <MatrixFillScene />,
+  dollar:        <DollarSelectionScene />,
+  apply:         <ApplyScene />,
+  combinatorics: <CombinatoricsScene />,
 };
 
 export default function App() {
