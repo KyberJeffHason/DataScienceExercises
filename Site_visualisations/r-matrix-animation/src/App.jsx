@@ -3,12 +3,14 @@ import { MatrixFillScene } from "./scenes/MatrixFillScene.jsx";
 import { DollarSelectionScene } from "./scenes/DollarSelectionScene.jsx";
 import { ApplyScene } from "./scenes/ApplyScene.jsx";
 import { CombinatoricsScene } from "./scenes/CombinatoricsScene.jsx";
+import { BayesScene } from "./scenes/BayesScene.jsx";
 
 const tabs = [
   { id: "matrix",        label: "matrix() fill order" },
   { id: "dollar",        label: "$ column selection"  },
   { id: "apply",         label: "sapply & mapply"     },
   { id: "combinatorics", label: "Combinatorics"       },
+  { id: "bayes",         label: "Bayes' Theorem"      },
 ];
 
 const scenes = {
@@ -16,6 +18,7 @@ const scenes = {
   dollar:        <DollarSelectionScene />,
   apply:         <ApplyScene />,
   combinatorics: <CombinatoricsScene />,
+  bayes:         <BayesScene />,
 };
 
 export default function App() {
