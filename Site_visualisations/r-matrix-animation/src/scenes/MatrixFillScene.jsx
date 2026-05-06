@@ -129,7 +129,7 @@ function RCode({ byrow }) {
 export function MatrixFillScene() {
   const [byrow, setByrow] = useState(false);
   const [step, setStep] = useState(0);
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState(true);
 
   useEffect(() => {
     if (!playing) return;
