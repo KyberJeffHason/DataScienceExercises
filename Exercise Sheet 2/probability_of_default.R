@@ -46,5 +46,5 @@ npv_computal = function(today_cashflow, agreedinterest, market_rate, risk_premiu
 for (i in 1:nrow(data1)) {
   data1$npv[i] = npv_computal(-1000000, data1$agreedinterest[i]/100, market_rate, data1$r_premim[i]/100)
 }
-
+which.max
 print(paste0("The company with highest NPV: ", data1$company[which.max(data1$npv)]))
