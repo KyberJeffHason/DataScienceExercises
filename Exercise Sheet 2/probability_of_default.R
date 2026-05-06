@@ -31,9 +31,8 @@ r_free = 0.049
 recovery_rate = 0.3945
 market_rate = 5/100
 
-for (i in 1:nrow(data1)) {
-  data1$r_min[i] = minimal_risk_for_surcharge(r_free, data1$prob_default[i]/100, recovery_rate)*100
-}
+data1$r_min = mapply(minimal_risk_for_surcharge, r_free, data1$prob_default/100,recovery_rate)*100
+
 
 print(paste0("Risk for Star ", minimal_risk_for_surcharge(r_free, 0.0003, recovery_rate)*100, "%"))
 print(paste0("Risk for Cow ", minimal_risk_for_surcharge(r_free, 0.0012, recovery_rate)*100, "%"))
@@ -43,8 +42,12 @@ npv_computal = function(today_cashflow, agreedinterest, market_rate, risk_premiu
   today_cashflow + (abs(today_cashflow) * (1+agreedinterest))/(1+market_rate+risk_premium)
 }
 
-for (i in 1:nrow(data1)) {
-  data1$npv[i] = npv_computal(-1000000, data1$agreedinterest[i]/100, market_rate, data1$r_premim[i]/100)
-}
-which.max
+data1$npv = mapply(
+  npv_computal,
+  today_cashflow = -1000000,
+  agreedinterest = data1$agreedinterest / 100,
+  market_rate = market_rate,
+  risk_premium = data1$r_premim / 100
+)
+
 print(paste0("The company with highest NPV: ", data1$company[which.max(data1$npv)]))
