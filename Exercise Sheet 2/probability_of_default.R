@@ -2,7 +2,7 @@ library(ggplot2)
 
 df <- data.frame(company=c("Star", "Cow", "Dog"),
                  interest_rate=c(5.20, 5.40, 9.00))
-head(df)
+print(df)
 
 # Basic barplot
 p<-ggplot(data=df, aes(x=company, y=interest_rate)) +
@@ -34,9 +34,9 @@ market_rate = 5/100
 data1$r_min = mapply(minimal_risk_for_surcharge, r_free, data1$prob_default/100,recovery_rate)*100
 
 
-print(paste0("Risk for Star ", minimal_risk_for_surcharge(r_free, 0.0003, recovery_rate)*100, "%"))
-print(paste0("Risk for Cow ", minimal_risk_for_surcharge(r_free, 0.0012, recovery_rate)*100, "%"))
-print(paste0("Risk for Dog ", minimal_risk_for_surcharge(r_free, 0.0727, recovery_rate)*100, "%"))
+#print(paste0("Risk for Star ", minimal_risk_for_surcharge(r_free, 0.0003, recovery_rate)*100, "%"))
+#print(paste0("Risk for Cow ", minimal_risk_for_surcharge(r_free, 0.0012, recovery_rate)*100, "%"))
+#print(paste0("Risk for Dog ", minimal_risk_for_surcharge(r_free, 0.0727, recovery_rate)*100, "%"))
 
 npv_computal = function(today_cashflow, agreedinterest, market_rate, risk_premium) {
   today_cashflow + (abs(today_cashflow) * (1+agreedinterest))/(1+market_rate+risk_premium)

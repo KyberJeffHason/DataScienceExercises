@@ -1,7 +1,7 @@
 # First linear equation
-# Open the brackets
 A = matrix(
-  c(4, 2, 1, 1), 
+  c(4, 2, 
+    1, 1), 
   nrow = 2,   
   ncol = 2,         
   byrow = TRUE          

@@ -1,2 +1,1 @@
-file_path <- file.choose()
-df <- read.csv(file_path, header = TRUE)
+df = read.csv("measles.csv", header=TRUE)
