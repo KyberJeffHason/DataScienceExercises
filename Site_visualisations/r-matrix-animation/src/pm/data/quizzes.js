@@ -1,8 +1,9 @@
 // Central registry of all Project-Management quizzes.
 // Add new quizzes by importing them and pushing into `quizzes`.
 import { jacobsenQuiz } from "./jacobsenQuiz.js";
+import { waterfallQuiz } from "./waterfallQuiz.js";
 
-export const quizzes = [jacobsenQuiz];
+export const quizzes = [jacobsenQuiz, waterfallQuiz];
 
 /** Flatten a quiz's sections into a single ordered question list, each tagged
  *  with its section title so the runner can show a section heading. */
