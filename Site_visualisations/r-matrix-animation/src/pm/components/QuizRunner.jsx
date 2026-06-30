@@ -8,6 +8,16 @@ const spring = { type: "spring", stiffness: 260, damping: 24 };
 
 const LETTER = ["A", "B", "C", "D", "E", "F"];
 
+/** Fisher–Yates shuffle returning a new array. */
+function shuffled(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 /**
  * Runs a quiz from start to finish.
  *
@@ -16,8 +26,20 @@ const LETTER = ["A", "B", "C", "D", "E", "F"];
  * @param {(result) => void} onFinish  Called with the computed result.
  * @param {() => void} onExit       Abort and return to the hub.
  */
-export function QuizRunner({ quiz, feedbackMode, onFinish, onExit }) {
-  const questions = useMemo(() => flattenQuestions(quiz), [quiz]);
+export function QuizRunner({
+  quiz,
+  feedbackMode,
+  shuffleQuestions = false,
+  shuffleAnswers = false,
+  onFinish,
+  onExit,
+}) {
+  const questions = useMemo(() => {
+    let qs = flattenQuestions(quiz);
+    if (shuffleQuestions) qs = shuffled(qs);
+    if (shuffleAnswers) qs = qs.map((q) => ({ ...q, options: shuffled(q.options) }));
+    return qs;
+  }, [quiz, shuffleQuestions, shuffleAnswers]);
   const total = questions.length;
 
   const [index, setIndex] = useState(0);
@@ -186,9 +208,9 @@ export function QuizRunner({ quiz, feedbackMode, onFinish, onExit }) {
                         </span>
                       </button>
 
-                      {/* per-option explanation (immediate mode, after answering) */}
+                      {/* per-option explanation (immediate mode, after answering) — shown for every option */}
                       <AnimatePresence>
-                        {revealed && (picked || opt.correct) && (
+                        {revealed && (
                           <motion.p
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: "auto" }}

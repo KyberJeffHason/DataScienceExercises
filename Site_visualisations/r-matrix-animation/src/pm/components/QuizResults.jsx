@@ -129,7 +129,6 @@ export function QuizResults({ result, onRetry, onHome }) {
                 <div className="space-y-2">
                   {q.options.map((opt, i) => {
                     const picked = q.pickedId === opt.id;
-                    const showThis = opt.correct || picked;
                     let tone = "border-slate-200 bg-slate-50";
                     if (opt.correct) tone = "border-emerald-300 bg-emerald-50";
                     else if (picked) tone = "border-rose-300 bg-rose-50";
@@ -159,18 +158,16 @@ export function QuizResults({ result, onRetry, onHome }) {
                             )}
                           </span>
                         </div>
-                        {showThis && (
-                          <p
-                            className={`ml-7 mt-1 text-xs leading-relaxed ${
-                              opt.correct ? "text-emerald-800" : "text-rose-700"
-                            }`}
-                          >
-                            <strong>
-                              {opt.correct ? "Why it's right: " : "Why it's wrong: "}
-                            </strong>
-                            {opt.explanation}
-                          </p>
-                        )}
+                        <p
+                          className={`ml-7 mt-1 text-xs leading-relaxed ${
+                            opt.correct ? "text-emerald-800" : "text-rose-700"
+                          }`}
+                        >
+                          <strong>
+                            {opt.correct ? "Why it's right: " : "Why it's wrong: "}
+                          </strong>
+                          {opt.explanation}
+                        </p>
                       </div>
                     );
                   })}

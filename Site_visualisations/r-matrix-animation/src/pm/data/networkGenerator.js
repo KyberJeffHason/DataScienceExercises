@@ -14,57 +14,98 @@ const ALPHABET = "ABCDEFGHIJ".split("");
 const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
 /**
- * Generate a small, clean activity network: a single start activity, two
- * parallel horizontal "lanes" that chain through the middle, and a single
- * finishing activity that merges the lanes. This keeps the diagram compact
- * with very few crossing edges.
+ * Generate a small but varied activity network: a single start activity, a
+ * random number of parallel horizontal "lanes" (2–3) of uneven length, an
+ * occasional merge between adjacent lanes, and a single finishing activity that
+ * merges the lane ends.
  *
- * Each activity carries a `row` hint (0 / 1, with start & finish centred) so
- * the layout can place lanes on straight horizontal tracks.
+ * The randomness is bounded so the diagram stays compact and readable (lanes
+ * are straight horizontal tracks; the only diagonals are short merges).
+ *
+ * Each activity carries a `row` hint so the layout can keep lanes on tracks.
  * @returns {{activities: Array<{id,dur,preds:string[],row:number}>}}
  */
 export function generateNetwork() {
-  const n = randInt(5, 6); // small exercise
-  const ids = ALPHABET.slice(0, n);
-  const first = ids[0];
-  const last = ids[n - 1];
-  const middle = ids.slice(1, n - 1);
+  // pick a lane structure with 3–5 middle activities total
+  const laneLengths = pickLaneLengths();
+  const laneCount = laneLengths.length;
 
-  // split the middle activities into two lanes (alternating)
-  const lanes = [[], []];
-  middle.forEach((id, i) => lanes[i % 2].push(id));
-  // if a lane is empty, borrow from the other so we always have two branches
-  if (lanes[1].length === 0 && lanes[0].length > 1) {
-    lanes[1].push(lanes[0].pop());
+  // grid[lane][col] = activity id; ids assigned column-major so the table reads
+  // A, then the first column of each lane, then the next column, etc.
+  const grid = laneLengths.map(() => []);
+  const maxLen = Math.max(...laneLengths);
+
+  let next = 0;
+  const id = () => ALPHABET[next++];
+  const first = id(); // A = start
+
+  for (let col = 0; col < maxLen; col++) {
+    for (let lane = 0; lane < laneCount; lane++) {
+      if (col < laneLengths[lane]) grid[lane][col] = id();
+    }
   }
+  const last = id(); // finish
 
   const preds = {};
   const row = {};
   preds[first] = [];
-  row[first] = 0.5; // centred
+  row[first] = (laneCount - 1) / 2; // centred
 
-  lanes.forEach((lane, laneIdx) => {
-    lane.forEach((id, i) => {
-      preds[id] = [i === 0 ? first : lane[i - 1]];
-      row[id] = laneIdx;
+  grid.forEach((lane, laneIdx) => {
+    lane.forEach((nodeId, col) => {
+      preds[nodeId] = [col === 0 ? first : lane[col - 1]];
+      row[nodeId] = laneIdx;
     });
   });
 
-  // finish merges the last node of each non-empty lane
-  preds[last] = lanes
-    .filter((l) => l.length)
-    .map((l) => l[l.length - 1]);
-  if (preds[last].length === 0) preds[last] = [first];
-  row[last] = 0.5; // centred
+  // optional single merge: an adjacent lane feeds into one node (short diagonal)
+  if (laneCount >= 2 && Math.random() < 0.5) {
+    const candidates = [];
+    grid.forEach((lane, laneIdx) => {
+      lane.forEach((nodeId, col) => {
+        if (col === 0) return; // keep the start fan-out clean
+        const adj = laneIdx + (Math.random() < 0.5 ? -1 : 1);
+        const source = grid[adj]?.[col - 1]; // earlier column → no cycle
+        if (source && !preds[nodeId].includes(source)) {
+          candidates.push([nodeId, source]);
+        }
+      });
+    });
+    if (candidates.length) {
+      const [nodeId, source] = candidates[randInt(0, candidates.length - 1)];
+      preds[nodeId].push(source);
+    }
+  }
 
-  const activities = ids.map((id) => ({
-    id,
+  // finish merges the last node of each lane
+  preds[last] = grid.map((lane) => lane[lane.length - 1]);
+  row[last] = (laneCount - 1) / 2; // centred
+
+  const ids = ALPHABET.slice(0, next);
+  const activities = ids.map((aId) => ({
+    id: aId,
     dur: randInt(2, 9),
-    preds: preds[id],
-    row: row[id],
+    preds: preds[aId],
+    row: row[aId],
   }));
 
   return { activities };
+}
+
+/** Random lane lengths giving 3–5 middle activities, varied each time. */
+function pickLaneLengths() {
+  const shapes = [
+    [2, 2], // 4 middle
+    [2, 1], // 3
+    [1, 2], // 3
+    [3, 2], // 5
+    [2, 3], // 5
+    [3, 1], // 4
+    [2, 1, 1], // 3 lanes, 4
+    [1, 2, 1], // 3 lanes, 4
+    [2, 2, 1], // 3 lanes, 5
+  ];
+  return shapes[randInt(0, shapes.length - 1)];
 }
 
 /** Topological order (Kahn's algorithm). */

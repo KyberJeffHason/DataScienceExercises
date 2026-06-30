@@ -27,6 +27,8 @@ export function QuizHub() {
   const [view, setView] = useState("browse");
   const [activeQuiz, setActiveQuiz] = useState(null);
   const [feedbackMode, setFeedbackMode] = useState("immediate");
+  const [shuffleQuestions, setShuffleQuestions] = useState(false);
+  const [shuffleAnswers, setShuffleAnswers] = useState(false);
   const [runKey, setRunKey] = useState(0); // bump to force a fresh runner
   const [lastResult, setLastResult] = useState(null);
 
@@ -79,6 +81,8 @@ export function QuizHub() {
         key={runKey}
         quiz={activeQuiz}
         feedbackMode={feedbackMode}
+        shuffleQuestions={shuffleQuestions}
+        shuffleAnswers={shuffleAnswers}
         onFinish={handleFinish}
         onExit={() => setView("browse")}
       />
@@ -103,6 +107,10 @@ export function QuizHub() {
         quiz={activeQuiz}
         feedbackMode={feedbackMode}
         setFeedbackMode={setFeedbackMode}
+        shuffleQuestions={shuffleQuestions}
+        setShuffleQuestions={setShuffleQuestions}
+        shuffleAnswers={shuffleAnswers}
+        setShuffleAnswers={setShuffleAnswers}
         onStart={startQuiz}
         onCancel={() => setView("browse")}
       />
@@ -414,7 +422,45 @@ function QuizCard({ quiz, attempts, best, onSelect }) {
   );
 }
 
-function ConfigScreen({ quiz, feedbackMode, setFeedbackMode, onStart, onCancel }) {
+function ToggleRow({ label, desc, checked, onChange }) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={`flex w-full items-center justify-between gap-3 rounded-2xl border-2 p-3 text-left transition-colors ${
+        checked ? "border-indigo-500 bg-indigo-50" : "border-slate-200 bg-white hover:border-indigo-300"
+      }`}
+    >
+      <span>
+        <span className="block text-sm font-semibold text-slate-900">{label}</span>
+        <span className="block text-xs text-slate-500">{desc}</span>
+      </span>
+      <span
+        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+          checked ? "bg-indigo-600" : "bg-slate-300"
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+            checked ? "left-[22px]" : "left-0.5"
+          }`}
+        />
+      </span>
+    </button>
+  );
+}
+
+function ConfigScreen({
+  quiz,
+  feedbackMode,
+  setFeedbackMode,
+  shuffleQuestions,
+  setShuffleQuestions,
+  shuffleAnswers,
+  setShuffleAnswers,
+  onStart,
+  onCancel,
+}) {
   const modes = [
     {
       id: "immediate",
@@ -465,6 +511,24 @@ function ConfigScreen({ quiz, feedbackMode, setFeedbackMode, onStart, onCancel }
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-sm font-semibold text-slate-700">Randomise</p>
+          <div className="space-y-2">
+            <ToggleRow
+              label="Shuffle question order"
+              desc="Present the questions in a random sequence."
+              checked={shuffleQuestions}
+              onChange={() => setShuffleQuestions((v) => !v)}
+            />
+            <ToggleRow
+              label="Shuffle answer order"
+              desc="Randomise the order of options within each question."
+              checked={shuffleAnswers}
+              onChange={() => setShuffleAnswers((v) => !v)}
+            />
           </div>
         </div>
 
