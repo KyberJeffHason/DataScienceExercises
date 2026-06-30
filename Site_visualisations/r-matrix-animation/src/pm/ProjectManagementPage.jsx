@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { QuizHub } from "./components/QuizHub.jsx";
 import { NetworkDiagramTrainer } from "./components/NetworkDiagramTrainer.jsx";
 import { EvmTrainer } from "./components/EvmTrainer.jsx";
+import { WbsTrainer } from "./components/WbsTrainer.jsx";
 
 const subTabs = [
   { id: "quizzes", label: "Quizzes" },
   { id: "network", label: "Network Diagram" },
   { id: "evm", label: "Earned Value" },
+  { id: "wbs", label: "WBS" },
 ];
 
 export function ProjectManagementPage() {
@@ -52,8 +54,10 @@ export function ProjectManagementPage() {
             <QuizHub />
           ) : subTab === "network" ? (
             <NetworkDiagramTrainer />
-          ) : (
+          ) : subTab === "evm" ? (
             <EvmTrainer />
+          ) : (
+            <WbsTrainer />
           )}
         </motion.div>
       </AnimatePresence>
