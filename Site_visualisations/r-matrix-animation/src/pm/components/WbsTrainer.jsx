@@ -1,72 +1,121 @@
 import { useMemo, useState } from "react";
 import { Card, CardContent } from "../../components/Card.jsx";
 import { Button } from "../../components/Button.jsx";
-import { generateWbs, solveWbs } from "../data/wbsGenerator.js";
+import { generateWbs } from "../data/wbsGenerator.js";
 
 const norm = (s) => (s || "").replace(/\s+/g, "");
+const OUT = "OUT";
+
+/**
+ * Deterministic solution:
+ *  • deliverable codes = 1.1, 1.2, … in display order
+ *  • each in-scope package gets parentCode.k (k contiguous within its bucket)
+ *  • decoy packages are out of scope
+ */
+function buildSolution(exercise) {
+  const delCode = {};
+  exercise.deliverables.forEach((d, i) => (delCode[d.id] = `1.${i + 1}`));
+
+  const nameToDel = Object.fromEntries(
+    exercise.deliverables.map((d) => [d.name, d.id])
+  );
+
+  const pkgParent = {};
+  const pkgCode = {};
+  const bucketSize = {};
+  const counter = {};
+  exercise.packages.forEach((p) => {
+    if (p.parentName) {
+      const did = nameToDel[p.parentName];
+      counter[did] = (counter[did] || 0) + 1;
+      pkgParent[p.id] = did;
+      pkgCode[p.id] = `${delCode[did]}.${counter[did]}`;
+    } else {
+      pkgParent[p.id] = OUT;
+      pkgCode[p.id] = "";
+    }
+  });
+  Object.assign(bucketSize, counter);
+
+  return { delCode, nameToDel, pkgParent, pkgCode, bucketSize };
+}
 
 export function WbsTrainer() {
   const [exercise, setExercise] = useState(() => generateWbs());
-  const [codes, setCodes] = useState({}); // { itemId: typed code }
-  const [excluded, setExcluded] = useState({}); // { deliverableId: bool }
+  const [delCodes, setDelCodes] = useState({}); // { delId: typed code }
+  const [pkgParent, setPkgParent] = useState({}); // { pkgId: delId | "OUT" }
+  const [pkgCodes, setPkgCodes] = useState({}); // { pkgId: typed code }
   const [result, setResult] = useState(null);
   const [showSolution, setShowSolution] = useState(false);
 
-  const solution = useMemo(() => solveWbs(exercise), [exercise]);
+  const sol = useMemo(() => buildSolution(exercise), [exercise]);
 
   function newExercise() {
-    const ex = generateWbs();
-    setExercise(ex);
-    setCodes({});
-    setExcluded({});
+    setExercise(generateWbs());
+    setDelCodes({});
+    setPkgParent({});
+    setPkgCodes({});
     setResult(null);
     setShowSolution(false);
   }
 
-  function setCode(id, value) {
-    setCodes((prev) => ({ ...prev, [id]: value }));
+  const clearResult = () => {
     setResult(null);
     setShowSolution(false);
-  }
-
-  function toggleExclude(id) {
-    setExcluded((prev) => ({ ...prev, [id]: !prev[id] }));
-    setResult(null);
-    setShowSolution(false);
-  }
+  };
 
   function check() {
     const rowState = {};
     let correct = 0;
     let total = 0;
 
+    // deliverable codes
     exercise.deliverables.forEach((d) => {
       total += 1;
-      if (d.inScope) {
-        const ok = !excluded[d.id] && norm(codes[d.id]) === solution.codes[d.id];
-        rowState[d.id] = ok ? "ok" : excluded[d.id] || codes[d.id] ? "wrong" : "empty";
-        if (ok) correct += 1;
-        // packages
-        d.packages.forEach((p) => {
-          total += 1;
-          const pOk = !excluded[d.id] && norm(codes[p.id]) === solution.codes[p.id];
-          rowState[p.id] = pOk ? "ok" : codes[p.id] ? "wrong" : "empty";
-          if (pOk) correct += 1;
-        });
-      } else {
-        // out of scope: correct iff the student marked it excluded
-        const ok = !!excluded[d.id];
-        rowState[d.id] = ok ? "ok" : "wrong";
-        if (ok) correct += 1;
-      }
+      const ok = norm(delCodes[d.id]) === sol.delCode[d.id];
+      rowState[d.id] = ok ? "ok" : delCodes[d.id] ? "wrong" : "empty";
+      if (ok) correct += 1;
     });
 
-    setResult({
-      rowState,
-      correct,
-      total,
-      allCorrect: correct === total,
+    // gather correctly-placed packages per deliverable to validate contiguous numbering
+    const placed = {}; // did -> [{ id, k|null }]
+    exercise.packages.forEach((p) => {
+      if (!p.parentName) return;
+      const did = sol.nameToDel[p.parentName];
+      if (pkgParent[p.id] !== did) return;
+      const prefix = `${sol.delCode[did]}.`;
+      const code = norm(pkgCodes[p.id]);
+      let k = null;
+      if (code.startsWith(prefix)) {
+        const tail = code.slice(prefix.length);
+        if (/^\d+$/.test(tail)) k = Number(tail);
+      }
+      (placed[did] ||= []).push({ id: p.id, k });
     });
+
+    exercise.packages.forEach((p) => {
+      total += 1;
+      const choice = pkgParent[p.id];
+      let ok = false;
+      if (!p.parentName) {
+        ok = choice === OUT; // decoy must be excluded
+      } else {
+        const did = sol.nameToDel[p.parentName];
+        if (choice === did) {
+          const N = sol.bucketSize[did];
+          const group = placed[did] || [];
+          const entry = group.find((e) => e.id === p.id);
+          const k = entry?.k;
+          const dup = group.filter((e) => e.k === k).length;
+          ok = k != null && k >= 1 && k <= N && dup === 1;
+        }
+      }
+      const touched = choice != null || pkgCodes[p.id];
+      rowState[p.id] = ok ? "ok" : touched ? "wrong" : "empty";
+      if (ok) correct += 1;
+    });
+
+    setResult({ rowState, correct, total, allCorrect: correct === total });
     setShowSolution(false);
   }
 
@@ -74,6 +123,12 @@ export function WbsTrainer() {
     setShowSolution(true);
     setResult(null);
   }
+
+  const delValue = (id) => (showSolution ? sol.delCode[id] : delCodes[id] || "");
+  const parentValue = (id) =>
+    showSolution ? sol.pkgParent[id] : pkgParent[id] ?? "";
+  const codeValue = (id) =>
+    showSolution ? sol.pkgCode[id] : pkgCodes[id] || "";
 
   return (
     <div className="space-y-5">
@@ -84,7 +139,7 @@ export function WbsTrainer() {
             Work Breakdown Structure (WBS) Training
           </h2>
           <p className="text-sm text-slate-500">
-            Number every in-scope element and exclude whatever is out of scope.
+            Decide scope, assign each package to a deliverable, and number the WBS.
           </p>
         </div>
         <Button variant="outline" onClick={newExercise}>
@@ -92,7 +147,7 @@ export function WbsTrainer() {
         </Button>
       </div>
 
-      {/* scenario + scope + task */}
+      {/* scenario + scope */}
       <Card className="rounded-2xl shadow-sm">
         <CardContent className="space-y-4 p-5">
           <div className="rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 p-4 text-white">
@@ -108,25 +163,18 @@ export function WbsTrainer() {
             </p>
           </div>
 
-          {/* project scope by inclusion / exclusion */}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                In scope — inclusions
+                Scope — inclusion
               </p>
-              <p className="text-sm text-emerald-900">
-                The project <strong>will deliver</strong>:{" "}
-                {exercise.scope.inclusions.join(", ")}.
-              </p>
+              <p className="text-sm text-emerald-900">{exercise.scope.includes}</p>
             </div>
             <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-rose-700">
-                Out of scope — exclusions
+                Scope — exclusion
               </p>
-              <p className="text-sm text-rose-900">
-                The project will <strong>not include</strong>:{" "}
-                {exercise.scope.exclusions.join(", ")}.
-              </p>
+              <p className="text-sm text-rose-900">{exercise.scope.excludes}</p>
             </div>
           </div>
 
@@ -134,96 +182,111 @@ export function WbsTrainer() {
             <p className="font-semibold text-slate-800">Your task</p>
             <ul className="mt-1 list-disc space-y-1 pl-5">
               <li>
-                Type the WBS number for every element. The root project is{" "}
-                <span className="font-mono font-semibold">1</span>.
+                Number the deliverables{" "}
+                <span className="font-mono">1.1, 1.2, …</span> in the order shown
+                (root project = <span className="font-mono">1</span>).
               </li>
               <li>
-                Number deliverables{" "}
-                <span className="font-mono">1.1, 1.2, …</span> top-to-bottom, and
-                their packages{" "}
-                <span className="font-mono">1.x.1, 1.x.2, …</span> in the order
-                shown.
+                Assign every work package to the deliverable it belongs under, and
+                number it <span className="font-mono">1.x.1, 1.x.2, …</span>{" "}
+                (contiguous within each deliverable; sibling order is up to you).
               </li>
               <li>
-                Some deliverables are <strong>out of scope</strong> — mark them{" "}
-                <em>Out of scope</em> and do <strong>not</strong> number them. Skip
-                excluded deliverables when numbering the rest.
+                Some packages are <strong>out of scope</strong> — decide which from
+                the scope statement above and assign them{" "}
+                <em>Out of scope</em> (the scope won't name them for you).
               </li>
             </ul>
           </div>
         </CardContent>
       </Card>
 
-      {/* WBS tree */}
+      {/* deliverables */}
       <Card className="rounded-2xl shadow-sm">
-        <CardContent className="space-y-2 p-5 font-mono text-sm">
-          {/* root */}
-          <div className="flex items-center gap-3 pb-1">
-            <span className="inline-flex h-8 w-20 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold text-white">
-              1
-            </span>
-            <span className="font-sans font-bold text-slate-900">
-              · {exercise.title}
-            </span>
+        <CardContent className="space-y-2 p-5">
+          <p className="text-sm font-semibold text-slate-700">
+            Deliverables (level 2) — type the WBS code
+          </p>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-3 pb-1">
+              <span className="inline-flex h-8 w-24 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold text-white">
+                1
+              </span>
+              <span className="font-semibold text-slate-900">· {exercise.title}</span>
+            </div>
+            {exercise.deliverables.map((d) => (
+              <div key={d.id} className="ml-6 flex items-center gap-3">
+                <CodeInput
+                  value={delValue(d.id)}
+                  disabled={showSolution}
+                  state={result?.rowState?.[d.id]}
+                  onChange={(v) => {
+                    setDelCodes((p) => ({ ...p, [d.id]: v }));
+                    clearResult();
+                  }}
+                />
+                <span className="font-semibold text-slate-800">· {d.name}</span>
+              </div>
+            ))}
           </div>
+        </CardContent>
+      </Card>
 
-          {exercise.deliverables.map((d) => {
-            const dExcluded = showSolution ? solution.excluded[d.id] : !!excluded[d.id];
-            const dShownCode = showSolution
-              ? solution.codes[d.id] ?? ""
-              : codes[d.id] || "";
-            return (
-              <div key={d.id} className="space-y-1.5">
-                {/* deliverable row */}
-                <div className="ml-6 flex flex-wrap items-center gap-3 pt-1">
-                  <CodeInput
-                    value={dExcluded ? "" : dShownCode}
-                    disabled={showSolution || dExcluded}
-                    state={result?.rowState?.[d.id]}
-                    onChange={(v) => setCode(d.id, v)}
-                  />
-                  <span
-                    className={`font-sans font-semibold ${
-                      dExcluded ? "text-slate-400 line-through" : "text-slate-800"
-                    }`}
-                  >
-                    · {d.name}
+      {/* work packages */}
+      <Card className="rounded-2xl shadow-sm">
+        <CardContent className="space-y-3 p-5">
+          <p className="text-sm font-semibold text-slate-700">
+            Work packages — assign a parent and type the code
+          </p>
+          <div className="space-y-2">
+            {exercise.packages.map((p) => {
+              const choice = parentValue(p.id);
+              const isOut = choice === OUT;
+              const state = result?.rowState?.[p.id];
+              let tone = "border-slate-200 bg-white";
+              if (showSolution) tone = "border-emerald-300 bg-emerald-50";
+              else if (state === "ok") tone = "border-emerald-300 bg-emerald-50";
+              else if (state === "wrong") tone = "border-rose-300 bg-rose-50";
+              return (
+                <div
+                  key={p.id}
+                  className={`flex flex-wrap items-center gap-2.5 rounded-xl border-2 px-3 py-2 ${tone}`}
+                >
+                  <span className="min-w-[150px] flex-1 text-sm font-medium text-slate-800">
+                    {p.name}
                   </span>
-                  <ExcludeToggle
-                    active={dExcluded}
+                  <select
+                    value={choice}
                     disabled={showSolution}
-                    onClick={() => toggleExclude(d.id)}
+                    onChange={(e) => {
+                      setPkgParent((prev) => ({ ...prev, [p.id]: e.target.value }));
+                      clearResult();
+                    }}
+                    className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                  >
+                    <option value="">Assign to…</option>
+                    {exercise.deliverables.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                    <option value={OUT}>Out of scope</option>
+                  </select>
+                  <CodeInput
+                    value={isOut ? "" : codeValue(p.id)}
+                    disabled={showSolution || isOut || !choice}
+                    state={isOut ? undefined : state}
+                    onChange={(v) => {
+                      setPkgCodes((prev) => ({ ...prev, [p.id]: v }));
+                      clearResult();
+                    }}
                   />
                 </div>
+              );
+            })}
+          </div>
 
-                {/* packages */}
-                {d.packages.map((p) => {
-                  const pShownCode = showSolution
-                    ? solution.codes[p.id] ?? ""
-                    : codes[p.id] || "";
-                  return (
-                    <div key={p.id} className="ml-16 flex flex-wrap items-center gap-3">
-                      <CodeInput
-                        value={dExcluded ? "" : pShownCode}
-                        disabled={showSolution || dExcluded}
-                        state={dExcluded ? undefined : result?.rowState?.[p.id]}
-                        onChange={(v) => setCode(p.id, v)}
-                      />
-                      <span
-                        className={`font-sans ${
-                          dExcluded ? "text-slate-400 line-through" : "text-slate-700"
-                        }`}
-                      >
-                        · {p.name}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-
-          <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4 font-sans">
+          <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
             <Button onClick={check}>Check answers</Button>
             <Button variant="outline" onClick={reveal}>
               Show solution
@@ -232,14 +295,14 @@ export function WbsTrainer() {
 
           {result && (
             <div
-              className={`rounded-xl px-4 py-3 text-sm font-sans font-semibold ${
+              className={`rounded-xl px-4 py-3 text-sm font-semibold ${
                 result.allCorrect
                   ? "bg-emerald-100 text-emerald-800"
                   : "bg-amber-100 text-amber-800"
               }`}
             >
               {result.allCorrect
-                ? "Perfect — correct numbering and the right items excluded!"
+                ? "Perfect — scope, placement and numbering are all correct!"
                 : `${result.correct}/${result.total} rows correct.`}
             </div>
           )}
@@ -251,7 +314,8 @@ export function WbsTrainer() {
 
 function CodeInput({ value, disabled, state, onChange }) {
   let tone = "border-slate-300";
-  if (disabled && state === undefined) tone = "border-slate-200 bg-slate-100 text-slate-300";
+  if (disabled && state === undefined)
+    tone = "border-slate-200 bg-slate-100 text-slate-300";
   if (state === "ok") tone = "border-emerald-400 bg-emerald-50 text-emerald-700";
   else if (state === "wrong") tone = "border-rose-400 bg-rose-50 text-rose-600";
   return (
@@ -262,22 +326,5 @@ function CodeInput({ value, disabled, state, onChange }) {
       onChange={(e) => onChange(e.target.value)}
       className={`h-8 w-24 rounded-lg border-2 px-2 text-center text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${tone}`}
     />
-  );
-}
-
-function ExcludeToggle({ active, disabled, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`ml-auto rounded-full border px-3 py-1 text-xs font-semibold font-sans transition-colors ${
-        active
-          ? "border-rose-400 bg-rose-100 text-rose-700"
-          : "border-slate-300 bg-white text-slate-500 hover:border-rose-300 hover:text-rose-600"
-      } ${disabled ? "opacity-60" : ""}`}
-    >
-      {active ? "✕ Out of scope" : "Mark out of scope"}
-    </button>
   );
 }
