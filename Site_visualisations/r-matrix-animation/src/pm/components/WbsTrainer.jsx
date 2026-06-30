@@ -125,10 +125,12 @@ export function WbsTrainer() {
   }
 
   const delValue = (id) => (showSolution ? sol.delCode[id] : delCodes[id] || "");
-  const parentValue = (id) =>
-    showSolution ? sol.pkgParent[id] : pkgParent[id] ?? "";
-  const codeValue = (id) =>
-    showSolution ? sol.pkgCode[id] : pkgCodes[id] || "";
+  const codeValue = (id) => (showSolution ? sol.pkgCode[id] : pkgCodes[id] || "");
+
+  const pool = exercise.packages.filter((p) => {
+    if (showSolution) return sol.pkgParent[p.id] === OUT;
+    return !pkgParent[p.id] || pkgParent[p.id] === OUT;
+  });
 
   return (
     <div className="space-y-5">
@@ -187,106 +189,173 @@ export function WbsTrainer() {
                 (root project = <span className="font-mono">1</span>).
               </li>
               <li>
-                Assign every work package to the deliverable it belongs under, and
-                number it <span className="font-mono">1.x.1, 1.x.2, …</span>{" "}
-                (contiguous within each deliverable; sibling order is up to you).
+                Assign work packages from the pool to their correct deliverable
+                using the dropdowns in the tree.
               </li>
               <li>
-                Some packages are <strong>out of scope</strong> — decide which from
-                the scope statement above and assign them{" "}
-                <em>Out of scope</em> (the scope won't name them for you).
+                Number each assigned package{" "}
+                <span className="font-mono">1.x.1, 1.x.2, …</span> (contiguous
+                within each deliverable).
+              </li>
+              <li>
+                Some packages in the pool are <strong>out of scope</strong> — leave
+                them in the pool and mark them <em>Out of scope</em>.
               </li>
             </ul>
           </div>
         </CardContent>
       </Card>
 
-      {/* deliverables */}
-      <Card className="rounded-2xl shadow-sm">
-        <CardContent className="space-y-2 p-5">
-          <p className="text-sm font-semibold text-slate-700">
-            Deliverables (level 2) — type the WBS code
-          </p>
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-3 pb-1">
-              <span className="inline-flex h-8 w-24 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold text-white">
-                1
-              </span>
-              <span className="font-semibold text-slate-900">· {exercise.title}</span>
-            </div>
-            {exercise.deliverables.map((d) => (
-              <div key={d.id} className="ml-6 flex items-center gap-3">
-                <CodeInput
-                  value={delValue(d.id)}
-                  disabled={showSolution}
-                  state={result?.rowState?.[d.id]}
-                  onChange={(v) => {
-                    setDelCodes((p) => ({ ...p, [d.id]: v }));
-                    clearResult();
-                  }}
-                />
-                <span className="font-semibold text-slate-800">· {d.name}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* work packages */}
+      {/* unassigned pool */}
       <Card className="rounded-2xl shadow-sm">
         <CardContent className="space-y-3 p-5">
           <p className="text-sm font-semibold text-slate-700">
-            Work packages — assign a parent and type the code
+            Unassigned &amp; Out of Scope Packages
           </p>
-          <div className="space-y-2">
-            {exercise.packages.map((p) => {
-              const choice = parentValue(p.id);
-              const isOut = choice === OUT;
-              const state = result?.rowState?.[p.id];
-              let tone = "border-slate-200 bg-white";
-              if (showSolution) tone = "border-emerald-300 bg-emerald-50";
-              else if (state === "ok") tone = "border-emerald-300 bg-emerald-50";
-              else if (state === "wrong") tone = "border-rose-300 bg-rose-50";
-              return (
-                <div
-                  key={p.id}
-                  className={`flex flex-wrap items-center gap-2.5 rounded-xl border-2 px-3 py-2 ${tone}`}
-                >
-                  <span className="min-w-[150px] flex-1 text-sm font-medium text-slate-800">
-                    {p.name}
-                  </span>
-                  <select
-                    value={choice}
-                    disabled={showSolution}
-                    onChange={(e) => {
-                      setPkgParent((prev) => ({ ...prev, [p.id]: e.target.value }));
-                      clearResult();
-                    }}
-                    className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+          {pool.length === 0 ? (
+            <p className="text-xs text-slate-400">All packages assigned.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {pool.map((p) => {
+                const isOut = showSolution ? true : pkgParent[p.id] === OUT;
+                const state = result?.rowState?.[p.id];
+                let tone = "border-slate-200 bg-white";
+                if (showSolution) tone = "border-emerald-300 bg-emerald-50";
+                else if (state === "ok") tone = "border-emerald-300 bg-emerald-50";
+                else if (state === "wrong") tone = "border-rose-300 bg-rose-50";
+
+                return (
+                  <div
+                    key={p.id}
+                    className={`flex items-center gap-2 rounded-xl border-2 px-3 py-1.5 ${tone}`}
                   >
-                    <option value="">Assign to…</option>
-                    {exercise.deliverables.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))}
-                    <option value={OUT}>Out of scope</option>
-                  </select>
+                    <span
+                      className={`text-sm font-medium ${
+                        isOut ? "text-slate-400 line-through" : "text-slate-800"
+                      }`}
+                    >
+                      {p.name}
+                    </span>
+                    {!showSolution && (
+                      <button
+                        onClick={() => {
+                          setPkgParent((prev) => ({
+                            ...prev,
+                            [p.id]: isOut ? undefined : OUT,
+                          }));
+                          clearResult();
+                        }}
+                        className={`text-xs font-semibold transition-colors ${
+                          isOut
+                            ? "text-slate-400 hover:text-slate-600"
+                            : "text-rose-500 hover:text-rose-700"
+                        }`}
+                      >
+                        {isOut ? "Undo" : "✕ Out of scope"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* WBS tree */}
+      <Card className="rounded-2xl shadow-sm">
+        <CardContent className="space-y-4 p-5 font-mono text-sm">
+          {/* root */}
+          <div className="flex items-center gap-3 pb-1">
+            <span className="inline-flex h-8 w-24 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold text-white">
+              1
+            </span>
+            <span className="font-sans font-bold text-slate-900">
+              · {exercise.title}
+            </span>
+          </div>
+
+          {exercise.deliverables.map((d) => {
+            const assigned = showSolution
+              ? exercise.packages.filter((p) => sol.pkgParent[p.id] === d.id)
+              : exercise.packages.filter((p) => pkgParent[p.id] === d.id);
+
+            return (
+              <div key={d.id} className="space-y-1.5">
+                {/* deliverable row */}
+                <div className="ml-6 flex flex-wrap items-center gap-3 pt-1">
                   <CodeInput
-                    value={isOut ? "" : codeValue(p.id)}
-                    disabled={showSolution || isOut || !choice}
-                    state={isOut ? undefined : state}
+                    value={delValue(d.id)}
+                    disabled={showSolution}
+                    state={result?.rowState?.[d.id]}
                     onChange={(v) => {
-                      setPkgCodes((prev) => ({ ...prev, [p.id]: v }));
+                      setDelCodes((p) => ({ ...p, [d.id]: v }));
                       clearResult();
                     }}
                   />
+                  <span className="font-sans font-semibold text-slate-800">
+                    · {d.name}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
 
-          <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                {/* assigned packages */}
+                {assigned.map((p) => (
+                  <div key={p.id} className="ml-16 flex flex-wrap items-center gap-3">
+                    <CodeInput
+                      value={codeValue(p.id)}
+                      disabled={showSolution}
+                      state={result?.rowState?.[p.id]}
+                      onChange={(v) => {
+                        setPkgCodes((prev) => ({ ...prev, [p.id]: v }));
+                        clearResult();
+                      }}
+                    />
+                    <span className="font-sans text-slate-700">· {p.name}</span>
+                    {!showSolution && (
+                      <button
+                        onClick={() => {
+                          setPkgParent((prev) => ({ ...prev, [p.id]: undefined }));
+                          clearResult();
+                        }}
+                        className="font-sans text-slate-400 hover:text-rose-500"
+                        title="Remove from deliverable"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                {/* add package dropdown */}
+                {!showSolution && (
+                  <div className="ml-16 flex flex-wrap items-center gap-3">
+                    <div className="w-24 shrink-0" /> {/* spacer for code input */}
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        setPkgParent((prev) => ({ ...prev, [e.target.value]: d.id }));
+                        clearResult();
+                      }}
+                      className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-sans outline-none focus:border-indigo-500"
+                    >
+                      <option value="" disabled>
+                        + Add package...
+                      </option>
+                      {exercise.packages
+                        .filter((p) => !pkgParent[p.id])
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4 font-sans">
             <Button onClick={check}>Check answers</Button>
             <Button variant="outline" onClick={reveal}>
               Show solution
@@ -295,7 +364,7 @@ export function WbsTrainer() {
 
           {result && (
             <div
-              className={`rounded-xl px-4 py-3 text-sm font-semibold ${
+              className={`rounded-xl px-4 py-3 text-sm font-sans font-semibold ${
                 result.allCorrect
                   ? "bg-emerald-100 text-emerald-800"
                   : "bg-amber-100 text-amber-800"
@@ -324,7 +393,7 @@ function CodeInput({ value, disabled, state, onChange }) {
       disabled={disabled}
       placeholder="—"
       onChange={(e) => onChange(e.target.value)}
-      className={`h-8 w-24 rounded-lg border-2 px-2 text-center text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${tone}`}
+      className={`h-8 w-24 shrink-0 rounded-lg border-2 px-2 text-center text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${tone}`}
     />
   );
 }
