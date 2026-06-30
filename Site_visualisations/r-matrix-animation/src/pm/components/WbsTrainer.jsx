@@ -74,8 +74,10 @@ export function WbsTrainer() {
             <p className="mt-1 text-sm">
               <strong>{exercise.title}</strong> — decompose the work. Each level-3{" "}
               <em>work package</em> below must sit under exactly one level-2{" "}
-              <em>deliverable</em> (the 100% rule: every package belongs to one,
-              and only one, parent).
+              <em>deliverable</em>.
+            </p>
+            <p className="mt-2 text-sm">
+              <strong>The 100% Rule:</strong> The WBS must include 100% of the work defined by the project scope—and absolutely nothing else. It applies to all hierarchical levels; the sum of all "child" tasks must exactly equal 100% of their "parent" deliverable.
             </p>
           </div>
 
