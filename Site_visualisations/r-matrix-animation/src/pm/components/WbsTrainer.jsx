@@ -73,7 +73,7 @@ export function WbsTrainer() {
     exercise.deliverables.forEach((d) => {
       total += 1;
       const ok = norm(delCodes[d.id]) === sol.delCode[d.id];
-      rowState[d.id] = ok ? "ok" : delCodes[d.id] ? "wrong" : "empty";
+      rowState[d.id] = ok ? "ok" : "wrong";
       if (ok) correct += 1;
     });
 
@@ -110,8 +110,7 @@ export function WbsTrainer() {
           ok = k != null && k >= 1 && k <= N && dup === 1;
         }
       }
-      const touched = choice != null || pkgCodes[p.id];
-      rowState[p.id] = ok ? "ok" : touched ? "wrong" : "empty";
+      rowState[p.id] = ok ? "ok" : "wrong";
       if (ok) correct += 1;
     });
 
@@ -198,8 +197,9 @@ export function WbsTrainer() {
                 within each deliverable).
               </li>
               <li>
-                Some packages in the pool are <strong>out of scope</strong> — leave
-                them in the pool and mark them <em>Out of scope</em>.
+                Some packages in the pool are <strong>out of scope</strong> — tick
+                their <em>checkbox</em> to exclude them (do not assign them to any
+                deliverable).
               </li>
             </ul>
           </div>
@@ -225,10 +225,25 @@ export function WbsTrainer() {
                 else if (state === "wrong") tone = "border-rose-300 bg-rose-50";
 
                 return (
-                  <div
+                  <label
                     key={p.id}
-                    className={`flex items-center gap-2 rounded-xl border-2 px-3 py-1.5 ${tone}`}
+                    className={`flex items-center gap-2 rounded-xl border-2 px-3 py-1.5 ${tone} ${
+                      showSolution ? "" : "cursor-pointer"
+                    }`}
                   >
+                    <input
+                      type="checkbox"
+                      checked={isOut}
+                      disabled={showSolution}
+                      onChange={() => {
+                        setPkgParent((prev) => ({
+                          ...prev,
+                          [p.id]: isOut ? undefined : OUT,
+                        }));
+                        clearResult();
+                      }}
+                      className="h-4 w-4 accent-rose-500"
+                    />
                     <span
                       className={`text-sm font-medium ${
                         isOut ? "text-slate-400 line-through" : "text-slate-800"
@@ -236,25 +251,14 @@ export function WbsTrainer() {
                     >
                       {p.name}
                     </span>
-                    {!showSolution && (
-                      <button
-                        onClick={() => {
-                          setPkgParent((prev) => ({
-                            ...prev,
-                            [p.id]: isOut ? undefined : OUT,
-                          }));
-                          clearResult();
-                        }}
-                        className={`text-xs font-semibold transition-colors ${
-                          isOut
-                            ? "text-slate-400 hover:text-slate-600"
-                            : "text-rose-500 hover:text-rose-700"
-                        }`}
-                      >
-                        {isOut ? "Undo" : "✕ Out of scope"}
-                      </button>
-                    )}
-                  </div>
+                    <span
+                      className={`text-[11px] font-semibold uppercase tracking-wide ${
+                        isOut ? "text-rose-500" : "text-slate-400"
+                      }`}
+                    >
+                      {isOut ? "out of scope" : "in scope?"}
+                    </span>
+                  </label>
                 );
               })}
             </div>
