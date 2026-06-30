@@ -117,11 +117,18 @@ export function NetworkDiagramTrainer() {
     x: (layout.pos[id].col + 1) * COL_W + 10,
     y: layout.pos[id].row * ROW_H + 15,
   });
-  const startXY = { x: 14, y: midY - 26 };
-  const finishXY = { x: (layout.cols + 1) * COL_W + 18, y: midY - 26 };
-
   const sources = network.activities.filter((a) => a.preds.length === 0);
   const sinks = network.activities.filter((a) => succ[a.id].length === 0);
+
+  // align terminals with the central source / sink nodes
+  const startCenterY = sources.length
+    ? nodeXY(sources[0].id).y + NODE_H / 2
+    : midY;
+  const finishCenterY = sinks.length
+    ? nodeXY(sinks[0].id).y + NODE_H / 2
+    : midY;
+  const startXY = { x: 14, y: startCenterY - 26 };
+  const finishXY = { x: (layout.cols + 1) * COL_W + 18, y: finishCenterY - 26 };
 
   return (
     <div className="space-y-5">

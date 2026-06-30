@@ -12,46 +12,56 @@
 
 const ALPHABET = "ABCDEFGHIJ".split("");
 const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-const pick = (arr) => arr[randInt(0, arr.length - 1)];
 
 /**
- * Generate a random, well-formed activity network with a single start and a
- * single finishing activity (so the diagram always lays out cleanly).
- * @returns {{activities: Array<{id,dur,preds:string[]}>}}
+ * Generate a small, clean activity network: a single start activity, two
+ * parallel horizontal "lanes" that chain through the middle, and a single
+ * finishing activity that merges the lanes. This keeps the diagram compact
+ * with very few crossing edges.
+ *
+ * Each activity carries a `row` hint (0 / 1, with start & finish centred) so
+ * the layout can place lanes on straight horizontal tracks.
+ * @returns {{activities: Array<{id,dur,preds:string[],row:number}>}}
  */
 export function generateNetwork() {
-  const n = randInt(7, 8); // small–medium
+  const n = randInt(5, 6); // small exercise
   const ids = ALPHABET.slice(0, n);
-  const preds = {};
-  ids.forEach((id) => (preds[id] = []));
+  const first = ids[0];
+  const last = ids[n - 1];
+  const middle = ids.slice(1, n - 1);
 
-  // A = single start (no predecessors)
-  // Two branches spring from A
-  preds[ids[1]] = [ids[0]];
-  preds[ids[2]] = [ids[0]];
-
-  // middle activities (everything except the last) chain from earlier ones
-  for (let i = 3; i < n - 1; i++) {
-    const earlier = ids.slice(1, i); // not A, not itself
-    const count = earlier.length >= 2 && Math.random() < 0.4 ? 2 : 1;
-    const chosen = new Set();
-    while (chosen.size < count) chosen.add(pick(earlier));
-    preds[ids[i]] = [...chosen];
+  // split the middle activities into two lanes (alternating)
+  const lanes = [[], []];
+  middle.forEach((id, i) => lanes[i % 2].push(id));
+  // if a lane is empty, borrow from the other so we always have two branches
+  if (lanes[1].length === 0 && lanes[0].length > 1) {
+    lanes[1].push(lanes[0].pop());
   }
 
-  // last activity = single sink: depends on every node that has no successor
-  const last = ids[n - 1];
-  const hasSuccessor = new Set();
-  ids.forEach((id) => preds[id].forEach((p) => hasSuccessor.add(p)));
-  const leaves = ids.filter(
-    (id) => id !== last && !hasSuccessor.has(id)
-  );
-  preds[last] = leaves.length ? leaves : [ids[n - 2]];
+  const preds = {};
+  const row = {};
+  preds[first] = [];
+  row[first] = 0.5; // centred
+
+  lanes.forEach((lane, laneIdx) => {
+    lane.forEach((id, i) => {
+      preds[id] = [i === 0 ? first : lane[i - 1]];
+      row[id] = laneIdx;
+    });
+  });
+
+  // finish merges the last node of each non-empty lane
+  preds[last] = lanes
+    .filter((l) => l.length)
+    .map((l) => l[l.length - 1]);
+  if (preds[last].length === 0) preds[last] = [first];
+  row[last] = 0.5; // centred
 
   const activities = ids.map((id) => ({
     id,
     dur: randInt(2, 9),
     preds: preds[id],
+    row: row[id],
   }));
 
   return { activities };
@@ -128,18 +138,26 @@ export function layoutNetwork(activities) {
   });
 
   const cols = Math.max(...Object.values(col)) + 1;
-  const rowCounter = Array(cols).fill(0);
-  const pos = {};
-  // keep activities in alphabetical order within a column for stable layout
-  [...activities]
-    .sort((a, b) => a.id.localeCompare(b.id))
-    .forEach((a) => {
-      const c = col[a.id];
-      pos[a.id] = { col: c, row: rowCounter[c] };
-      rowCounter[c] += 1;
-    });
 
-  const rows = Math.max(...rowCounter);
+  // If activities carry a lane `row` hint, honour it for clean horizontal lanes;
+  // otherwise stack them within each column.
+  const hasRowHints = activities.every((a) => typeof a.row === "number");
+  const pos = {};
+  if (hasRowHints) {
+    activities.forEach((a) => {
+      pos[a.id] = { col: col[a.id], row: a.row };
+    });
+  } else {
+    const rowCounter = Array(cols).fill(0);
+    [...activities]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .forEach((a) => {
+        pos[a.id] = { col: col[a.id], row: rowCounter[col[a.id]] };
+        rowCounter[col[a.id]] += 1;
+      });
+  }
+
+  const rows = Math.max(...activities.map((a) => pos[a.id].row)) + 1;
   return { pos, cols, rows };
 }
 
