@@ -1,52 +1,56 @@
 import { useState } from "react";
-import { MatrixFillScene } from "./scenes/MatrixFillScene.jsx";
-import { DollarSelectionScene } from "./scenes/DollarSelectionScene.jsx";
-import { ApplyScene } from "./scenes/ApplyScene.jsx";
-import { CombinatoricsScene } from "./scenes/CombinatoricsScene.jsx";
-import { BayesScene } from "./scenes/BayesScene.jsx";
+import { motion, AnimatePresence } from "framer-motion";
+import { RVisualisationsPage } from "./pages/RVisualisationsPage.jsx";
+import { ProjectManagementPage } from "./pm/ProjectManagementPage.jsx";
 
-const tabs = [
-  { id: "matrix",        label: "matrix() fill order" },
-  { id: "dollar",        label: "$ column selection"  },
-  { id: "apply",         label: "sapply & mapply"     },
-  { id: "combinatorics", label: "Combinatorics"       },
-  { id: "bayes",         label: "Bayes' Theorem"      },
+const pages = [
+  { id: "r", label: "R Visualisations", icon: "📈" },
+  { id: "pm", label: "Project Management", icon: "📋" },
 ];
 
-const scenes = {
-  matrix:        <MatrixFillScene />,
-  dollar:        <DollarSelectionScene />,
-  apply:         <ApplyScene />,
-  combinatorics: <CombinatoricsScene />,
-  bayes:         <BayesScene />,
-};
-
 export default function App() {
-  const [tab, setTab] = useState("matrix");
+  const [page, setPage] = useState("r");
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 text-slate-900">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <div className="flex justify-center">
-          <div className="inline-flex rounded-2xl bg-white p-1 shadow-sm flex-wrap gap-1">
-            {tabs.map((t) => (
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      {/* top-level page navigation */}
+      <nav className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
+          <span className="text-sm font-bold tracking-tight text-slate-900">
+            Data Science Exercises
+          </span>
+          <div className="inline-flex gap-1 rounded-xl bg-slate-100 p-1">
+            {pages.map((p) => (
               <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
-                  tab === t.id
-                    ? "bg-slate-900 text-white shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
+                key={p.id}
+                onClick={() => setPage(p.id)}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  page === p.id
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-900"
                 }`}
               >
-                {t.label}
+                <span className="mr-1">{p.icon}</span>
+                {p.label}
               </button>
             ))}
           </div>
         </div>
+      </nav>
 
-        {scenes[tab]}
-      </div>
+      <main className="mx-auto max-w-5xl p-6">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={page}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {page === "r" ? <RVisualisationsPage /> : <ProjectManagementPage />}
+          </motion.div>
+        </AnimatePresence>
+      </main>
     </div>
   );
 }
