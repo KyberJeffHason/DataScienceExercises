@@ -2,10 +2,12 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { QuizHub } from "./components/QuizHub.jsx";
 import { NetworkDiagramTrainer } from "./components/NetworkDiagramTrainer.jsx";
+import { EvmTrainer } from "./components/EvmTrainer.jsx";
 
 const subTabs = [
   { id: "quizzes", label: "Quizzes" },
   { id: "network", label: "Network Diagram" },
+  { id: "evm", label: "Earned Value" },
 ];
 
 export function ProjectManagementPage() {
@@ -46,7 +48,13 @@ export function ProjectManagementPage() {
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.2 }}
         >
-          {subTab === "quizzes" ? <QuizHub /> : <NetworkDiagramTrainer />}
+          {subTab === "quizzes" ? (
+            <QuizHub />
+          ) : subTab === "network" ? (
+            <NetworkDiagramTrainer />
+          ) : (
+            <EvmTrainer />
+          )}
         </motion.div>
       </AnimatePresence>
     </div>
