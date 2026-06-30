@@ -77,39 +77,15 @@ export function WbsTrainer() {
       if (ok) correct += 1;
     });
 
-    // gather correctly-placed packages per deliverable to validate contiguous numbering
-    const placed = {}; // did -> [{ id, k|null }]
-    exercise.packages.forEach((p) => {
-      if (!p.parentName) return;
-      const did = sol.nameToDel[p.parentName];
-      if (pkgParent[p.id] !== did) return;
-      const prefix = `${sol.delCode[did]}.`;
-      const code = norm(pkgCodes[p.id]);
-      let k = null;
-      if (code.startsWith(prefix)) {
-        const tail = code.slice(prefix.length);
-        if (/^\d+$/.test(tail)) k = Number(tail);
-      }
-      (placed[did] ||= []).push({ id: p.id, k });
-    });
-
+    // packages are graded on category (correct deliverable / out of scope) only —
+    // the exact sequence number is not penalised as long as the placement is right.
     exercise.packages.forEach((p) => {
       total += 1;
       const choice = pkgParent[p.id];
-      let ok = false;
-      if (!p.parentName) {
-        ok = choice === OUT; // decoy must be excluded
-      } else {
-        const did = sol.nameToDel[p.parentName];
-        if (choice === did) {
-          const N = sol.bucketSize[did];
-          const group = placed[did] || [];
-          const entry = group.find((e) => e.id === p.id);
-          const k = entry?.k;
-          const dup = group.filter((e) => e.k === k).length;
-          ok = k != null && k >= 1 && k <= N && dup === 1;
-        }
-      }
+      // decoys must be excluded; in-scope packages must sit under the right deliverable
+      const ok = !p.parentName
+        ? choice === OUT
+        : choice === sol.nameToDel[p.parentName];
       rowState[p.id] = ok ? "ok" : "wrong";
       if (ok) correct += 1;
     });
@@ -193,8 +169,9 @@ export function WbsTrainer() {
               </li>
               <li>
                 Number each assigned package{" "}
-                <span className="font-mono">1.x.1, 1.x.2, …</span> (contiguous
-                within each deliverable).
+                <span className="font-mono">1.x.1, 1.x.2, …</span> for practice —
+                grading checks the <strong>correct deliverable</strong>, not the
+                exact sequence number.
               </li>
               <li>
                 Some packages in the pool are <strong>out of scope</strong> — tick
