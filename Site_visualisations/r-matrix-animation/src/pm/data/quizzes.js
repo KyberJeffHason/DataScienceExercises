@@ -3,8 +3,9 @@
 import { jacobsenQuiz } from "./jacobsenQuiz.js";
 import { waterfallQuiz } from "./waterfallQuiz.js";
 import { projectDocumentsQuiz } from "./projectDocuments.js"; // Project Documents Quiz
+import { scrumQuiz } from "./scrumQuiz.js"; // Scrum Quiz
 
-export const quizzes = [jacobsenQuiz, waterfallQuiz, projectDocumentsQuiz];
+export const quizzes = [jacobsenQuiz, waterfallQuiz, projectDocumentsQuiz, scrumQuiz];
 
 /** Flatten a quiz's sections into a single ordered question list, each tagged
  *  with its section title so the runner can show a section heading. */
