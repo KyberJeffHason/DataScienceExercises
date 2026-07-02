@@ -15,12 +15,12 @@ const num = (id, prompt, answer, explanation, extra = {}) => ({
 
 export const estimationQuiz = {
   id: "estimation",
-  title: "Estimation Techniques (PMI)",
-  subtitle: "Analogous · Parametric · Three-point / PERT · Bottom-up · Reserves",
+  title: "Estimation Techniques — Hard (Calculations)",
+  subtitle: "PERT · Parametric · Analogous · Reserves — number crunching",
   description:
-    "Learn and practise the estimating techniques from the PMBOK® Guide. Concept " +
-    "questions explain when each technique fits, and calculation exercises let you " +
-    "work out PERT estimates, parametric costs, estimate ranges and reserves.",
+    "Hands-on calculation practice for PMI estimation techniques. Work out PERT " +
+    "expected values and standard deviations, scale parametric and analogous estimates, " +
+    "and compute cost baselines with contingency and management reserves.",
   sections: [
     // ── 1. Fundamentals (concept) ──────────────────────────────────────────
     {

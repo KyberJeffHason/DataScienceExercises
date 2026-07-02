@@ -5,7 +5,8 @@ import { waterfallQuiz } from "./waterfallQuiz.js";
 import { projectDocumentsQuiz } from "./projectDocuments.js"; // Project Documents Quiz
 import { scrumQuiz } from "./scrumQuiz.js"; // Scrum Quiz
 import { mixedQuiz } from "./mixedQuiz.js"; // Mixed Quiz
-import { estimationQuiz } from "./estimationQuiz.js"; // Estimation Techniques (PMI)
+import { estimationQuiz } from "./estimationQuiz.js"; // Estimation Techniques — Hard (Calculations)
+import { estimationTheoryQuiz } from "./estimationTheoryQuiz.js"; // Estimation Techniques — Theory
 import { processGroupsQuiz } from "./processGroupsQuiz.js"; // PMI Process Groups (drag & drop)
 
 export const quizzes = [
@@ -14,6 +15,7 @@ export const quizzes = [
   projectDocumentsQuiz,
   scrumQuiz,
   mixedQuiz,
+  estimationTheoryQuiz,
   estimationQuiz,
   processGroupsQuiz,
 ];
