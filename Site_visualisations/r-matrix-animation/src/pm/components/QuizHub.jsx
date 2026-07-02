@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "../../components/Card.jsx";
 import { Button } from "../../components/Button.jsx";
-import { quizzes, countQuestions } from "../data/quizzes.js";
+import { quizzes, countQuestions, getQuizById } from "../data/quizzes.js";
 import {
   getUsers,
   getCurrentUser,
@@ -31,6 +31,7 @@ export function QuizHub() {
   const [shuffleAnswers, setShuffleAnswers] = useState(false);
   const [runKey, setRunKey] = useState(0); // bump to force a fresh runner
   const [lastResult, setLastResult] = useState(null);
+  const [reviewFromHistory, setReviewFromHistory] = useState(false);
 
   function refreshHistory(u) {
     setHistory(getHistory(u));
@@ -51,15 +52,25 @@ export function QuizHub() {
       correct: result.correct,
       wrong: result.wrong,
       durationMs: result.durationMs,
+      breakdown: result.breakdown, // full per-question detail for later review
     });
     refreshHistory(user);
+    setReviewFromHistory(false);
     setLastResult(result);
     setView("results");
   }
 
   function startQuiz() {
+    setReviewFromHistory(false);
     setRunKey((k) => k + 1);
     setView("running");
+  }
+
+  function reviewAttempt(record) {
+    setActiveQuiz(getQuizById(record.quizId) || null);
+    setLastResult(record);
+    setReviewFromHistory(true);
+    setView("results");
   }
 
   // ── no user yet ──
@@ -94,8 +105,9 @@ export function QuizHub() {
     return (
       <QuizResults
         result={lastResult}
-        onRetry={startQuiz}
+        onRetry={activeQuiz ? startQuiz : undefined}
         onHome={() => setView("browse")}
+        fromHistory={reviewFromHistory}
       />
     );
   }
@@ -143,6 +155,7 @@ export function QuizHub() {
 
       <HistoryDashboard
         history={history}
+        onReview={reviewAttempt}
         onClear={() => {
           clearHistory(user);
           refreshHistory(user);
@@ -287,7 +300,7 @@ function UserBar({ users, user, onSwitch, onAdd, onRemove }) {
   );
 }
 
-function HistoryDashboard({ history, onClear }) {
+function HistoryDashboard({ history, onReview, onClear }) {
   const stats = summariseHistory(history);
   return (
     <Card className="rounded-3xl shadow-sm">
@@ -330,6 +343,7 @@ function HistoryDashboard({ history, onClear }) {
                   <th className="px-4 py-2 text-center font-semibold">Correct</th>
                   <th className="px-4 py-2 text-center font-semibold">Wrong</th>
                   <th className="px-4 py-2 text-center font-semibold">Score</th>
+                  <th className="px-4 py-2 text-center font-semibold">Review</th>
                 </tr>
               </thead>
               <tbody>
@@ -367,6 +381,18 @@ function HistoryDashboard({ history, onClear }) {
                         >
                           {pct}%
                         </span>
+                      </td>
+                      <td className="px-4 py-2 text-center">
+                        {a.breakdown && a.breakdown.length > 0 ? (
+                          <button
+                            onClick={() => onReview(a)}
+                            className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50"
+                          >
+                            Review →
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-300">—</span>
+                        )}
                       </td>
                     </tr>
                   );

@@ -5,8 +5,18 @@ import { waterfallQuiz } from "./waterfallQuiz.js";
 import { projectDocumentsQuiz } from "./projectDocuments.js"; // Project Documents Quiz
 import { scrumQuiz } from "./scrumQuiz.js"; // Scrum Quiz
 import { mixedQuiz } from "./mixedQuiz.js"; // Mixed Quiz
+import { estimationQuiz } from "./estimationQuiz.js"; // Estimation Techniques (PMI)
+import { processGroupsQuiz } from "./processGroupsQuiz.js"; // PMI Process Groups (drag & drop)
 
-export const quizzes = [jacobsenQuiz, waterfallQuiz, projectDocumentsQuiz, scrumQuiz, mixedQuiz];
+export const quizzes = [
+  jacobsenQuiz,
+  waterfallQuiz,
+  projectDocumentsQuiz,
+  scrumQuiz,
+  mixedQuiz,
+  estimationQuiz,
+  processGroupsQuiz,
+];
 
 /** Flatten a quiz's sections into a single ordered question list, each tagged
  *  with its section title so the runner can show a section heading. */
