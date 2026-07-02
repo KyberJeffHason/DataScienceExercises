@@ -89,6 +89,13 @@ export function clearHistory(user) {
   write(historyKey(user), []);
 }
 
+/** Replace a stored attempt (matched by id) — used to persist manual overrides. */
+export function updateAttempt(user, record) {
+  if (!user || !record?.id) return;
+  const history = getHistory(user).map((a) => (a.id === record.id ? { ...a, ...record } : a));
+  write(historyKey(user), history);
+}
+
 /** Aggregate stats across a user's whole history (for the dashboard). */
 export function summariseHistory(history) {
   const attempts = history.length;

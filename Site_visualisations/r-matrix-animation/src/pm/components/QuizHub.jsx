@@ -11,6 +11,7 @@ import {
   removeUser,
   getHistory,
   saveAttempt,
+  updateAttempt,
   clearHistory,
   summariseHistory,
 } from "../storage.js";
@@ -44,7 +45,7 @@ export function QuizHub() {
   }
 
   function handleFinish(result) {
-    saveAttempt(user, {
+    const record = saveAttempt(user, {
       quizId: result.quizId,
       quizTitle: result.quizTitle,
       feedbackMode: result.feedbackMode,
@@ -56,8 +57,15 @@ export function QuizHub() {
     });
     refreshHistory(user);
     setReviewFromHistory(false);
-    setLastResult(result);
+    setLastResult(record || result); // record carries an id for later overrides
     setView("results");
+  }
+
+  // Persist manual overrides / self-grades made on the results or review screen.
+  function handleUpdateResult(updated) {
+    setLastResult(updated);
+    updateAttempt(user, updated);
+    refreshHistory(user);
   }
 
   function startQuiz() {
@@ -104,10 +112,12 @@ export function QuizHub() {
   if (view === "results" && lastResult) {
     return (
       <QuizResults
+        key={lastResult.id || "live"}
         result={lastResult}
         onRetry={activeQuiz ? startQuiz : undefined}
         onHome={() => setView("browse")}
         fromHistory={reviewFromHistory}
+        onUpdateResult={handleUpdateResult}
       />
     );
   }

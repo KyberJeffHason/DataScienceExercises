@@ -8,6 +8,7 @@ import { mixedQuiz } from "./mixedQuiz.js"; // Mixed Quiz
 import { estimationQuiz } from "./estimationQuiz.js"; // Estimation Techniques — Hard (Calculations)
 import { estimationTheoryQuiz } from "./estimationTheoryQuiz.js"; // Estimation Techniques — Theory
 import { processGroupsQuiz } from "./processGroupsQuiz.js"; // PMI Process Groups (drag & drop)
+import { activeRecallQuiz } from "./activeRecallQuiz.js"; // Sampler: multi/text/cloze/matrix/recall
 import { quizPart1 } from "./quizPart1.js"; // Part 1: Introduction to Project Management
 import { quizPart2 } from "./quizPart2.js"; // Part 2: PMI Framework, Lifecycle and Project Success
 export const quizzes = [
@@ -19,6 +20,7 @@ export const quizzes = [
   estimationTheoryQuiz,
   estimationQuiz,
   processGroupsQuiz,
+  activeRecallQuiz,
   quizPart1,
   quizPart2,
 ];
