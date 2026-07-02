@@ -502,6 +502,7 @@ function NumericBlock({ q, value, revealed, isImmediate, onChange, onCheck }) {
 function DndBlock({ q, placements, revealed, onChange }) {
   const [selected, setSelected] = useState(null); // tap-to-place fallback
   const [dragId, setDragId] = useState(null);
+  const [dragOverId, setDragOverId] = useState(null); // highlight drop zones
 
   const pool = q.items.filter((it) => placements[it.id] == null);
   const itemsIn = (targetId) =>
@@ -531,11 +532,30 @@ function DndBlock({ q, placements, revealed, onChange }) {
     if (selected === it.id) tone = "border-violet-500 bg-violet-50 ring-2 ring-violet-200";
     if (ok) tone = "border-emerald-400 bg-emerald-50";
     if (bad) tone = "border-rose-400 bg-rose-50";
+    
+    // Ghost effect while dragging
+    if (dragId === it.id) tone += " opacity-50";
+
     return (
-      <button
+      <motion.button
+        layout
+        layoutId={`dnd-${q.id}-${it.id}`}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: dragId === it.id ? 0.5 : 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.8 }}
+        whileHover={!revealed ? { scale: 1.03 } : {}}
+        whileTap={!revealed ? { scale: 0.97 } : {}}
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
         type="button"
         draggable={!revealed}
-        onDragStart={() => setDragId(it.id)}
+        onDragStart={(e) => {
+          setDragId(it.id);
+          // Required for Firefox
+          if (e.dataTransfer) {
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text/plain", it.id);
+          }
+        }}
         onDragEnd={() => setDragId(null)}
         onClick={() => (inTarget ? unassign(it.id) : tapItem(it.id))}
         disabled={revealed}
@@ -546,7 +566,7 @@ function DndBlock({ q, placements, revealed, onChange }) {
       >
         {revealed && (ok ? "✓ " : bad ? "✕ " : "")}
         {it.text}
-      </button>
+      </motion.button>
     );
   };
 
@@ -561,9 +581,20 @@ function DndBlock({ q, placements, revealed, onChange }) {
 
       {/* pool */}
       <div
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={() => dragId && unassign(dragId)}
-        className="min-h-[3rem] rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 p-3"
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (!revealed) setDragOverId("pool");
+        }}
+        onDragLeave={() => setDragOverId(null)}
+        onDrop={() => {
+          if (dragId) unassign(dragId);
+          setDragOverId(null);
+        }}
+        className={`min-h-[3rem] rounded-2xl border-2 border-dashed p-3 transition-colors ${
+          dragOverId === "pool"
+            ? "border-slate-400 bg-slate-100"
+            : "border-slate-200 bg-slate-50/60"
+        }`}
       >
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
           Items
@@ -584,11 +615,20 @@ function DndBlock({ q, placements, revealed, onChange }) {
         {q.targets.map((t) => (
           <div
             key={t.id}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => assign(dragId, t.id)}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (!revealed) setDragOverId(t.id);
+            }}
+            onDragLeave={() => setDragOverId(null)}
+            onDrop={() => {
+              if (dragId) assign(dragId, t.id);
+              setDragOverId(null);
+            }}
             onClick={() => selected && assign(selected, t.id)}
             className={`rounded-2xl border-2 p-3 transition-colors ${
-              selected && !revealed
+              dragOverId === t.id
+                ? "border-violet-400 bg-violet-50"
+                : selected && !revealed
                 ? "border-violet-300 bg-violet-50/40"
                 : "border-slate-200 bg-white"
             }`}
