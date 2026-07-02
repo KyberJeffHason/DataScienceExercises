@@ -499,10 +499,81 @@ function NumericBlock({ q, value, revealed, isImmediate, onChange, onCheck }) {
 }
 
 // ── Drag & drop (matching items → targets) ─────────────────────────────────
+
+const POOL_ZONE = "__pool";
+
+/** Which drop zone (pool or target id) sits under the given viewport point. */
+function zoneAtPoint(x, y) {
+  if (x == null || y == null) return null;
+  const el = document.elementFromPoint(x, y);
+  const zone = el?.closest("[data-dropzone]");
+  return zone?.getAttribute("data-dropzone") ?? null;
+}
+
+function pointFrom(event, info) {
+  const x = event?.clientX ?? info?.point?.x;
+  const y = event?.clientY ?? info?.point?.y;
+  return [x, y];
+}
+
+/** A single draggable token. Hoisted to a real component so it keeps its
+ *  identity across parent re-renders (no remount = no flicker). */
+function DndToken({
+  it,
+  revealed,
+  placements,
+  selected,
+  dragging,
+  inTarget,
+  onDragStart,
+  onDrag,
+  onDragEnd,
+  onTap,
+}) {
+  const ok = revealed && placements[it.id] === it.target;
+  const bad =
+    revealed && placements[it.id] != null && placements[it.id] !== it.target;
+  let tone = "border-slate-200 bg-white hover:border-violet-300 hover:shadow-sm";
+  if (selected) tone = "border-violet-500 bg-violet-50 ring-2 ring-violet-200";
+  if (ok) tone = "border-emerald-400 bg-emerald-50";
+  if (bad) tone = "border-rose-400 bg-rose-50";
+
+  return (
+    <motion.button
+      type="button"
+      drag={!revealed}
+      dragSnapToOrigin
+      dragElastic={0.18}
+      dragMomentum={false}
+      initial={{ opacity: 0, scale: 0.92 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: "spring", stiffness: 500, damping: 34 }}
+      whileHover={!revealed ? { y: -1 } : undefined}
+      whileDrag={{
+        scale: 1.06,
+        zIndex: 50,
+        boxShadow: "0 14px 30px rgba(15,23,42,0.22)",
+      }}
+      onDragStart={() => onDragStart(it.id)}
+      onDrag={onDrag}
+      onDragEnd={(e, info) => onDragEnd(it.id, e, info)}
+      onClick={() => onTap(it.id, inTarget)}
+      disabled={revealed}
+      className={`relative select-none touch-none rounded-xl border-2 px-3 py-1.5 text-sm font-medium text-slate-800 transition-[background-color,border-color,box-shadow] ${tone} ${
+        revealed ? "cursor-default" : "cursor-grab active:cursor-grabbing"
+      } ${dragging ? "pointer-events-none" : ""}`}
+      title={inTarget && !revealed ? "Click to send back to pool" : undefined}
+    >
+      {revealed && (ok ? "✓ " : bad ? "✕ " : "")}
+      {it.text}
+    </motion.button>
+  );
+}
+
 function DndBlock({ q, placements, revealed, onChange }) {
   const [selected, setSelected] = useState(null); // tap-to-place fallback
-  const [dragId, setDragId] = useState(null);
-  const [dragOverId, setDragOverId] = useState(null); // highlight drop zones
+  const [dragId, setDragId] = useState(null); // item currently being dragged
+  const [hoverZone, setHoverZone] = useState(null); // zone under the pointer
 
   const pool = q.items.filter((it) => placements[it.id] == null);
   const itemsIn = (targetId) =>
@@ -520,78 +591,44 @@ function DndBlock({ q, placements, revealed, onChange }) {
     onChange(next);
     setSelected(null);
   }
-  function tapItem(itemId) {
+  function tap(itemId, inTarget) {
     if (revealed) return;
-    setSelected((s) => (s === itemId ? null : itemId));
+    if (inTarget) unassign(itemId);
+    else setSelected((s) => (s === itemId ? null : itemId));
   }
 
-  const Token = ({ it, inTarget }) => {
-    const ok = revealed && placements[it.id] === it.target;
-    const bad = revealed && placements[it.id] != null && placements[it.id] !== it.target;
-    let tone = "border-slate-200 bg-white hover:border-violet-300";
-    if (selected === it.id) tone = "border-violet-500 bg-violet-50 ring-2 ring-violet-200";
-    if (ok) tone = "border-emerald-400 bg-emerald-50";
-    if (bad) tone = "border-rose-400 bg-rose-50";
-    
-    // Ghost effect while dragging
-    if (dragId === it.id) tone += " opacity-50";
-
-    return (
-      <motion.button
-        layout
-        layoutId={`dnd-${q.id}-${it.id}`}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: dragId === it.id ? 0.5 : 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.8 }}
-        whileHover={!revealed ? { scale: 1.03 } : {}}
-        whileTap={!revealed ? { scale: 0.97 } : {}}
-        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        type="button"
-        draggable={!revealed}
-        onDragStart={(e) => {
-          setDragId(it.id);
-          // Required for Firefox
-          if (e.dataTransfer) {
-            e.dataTransfer.effectAllowed = "move";
-            e.dataTransfer.setData("text/plain", it.id);
-          }
-        }}
-        onDragEnd={() => setDragId(null)}
-        onClick={() => (inTarget ? unassign(it.id) : tapItem(it.id))}
-        disabled={revealed}
-        className={`rounded-xl border-2 px-3 py-1.5 text-sm font-medium text-slate-800 transition-colors ${tone} ${
-          revealed ? "cursor-default" : "cursor-grab active:cursor-grabbing"
-        }`}
-        title={inTarget && !revealed ? "Click to send back to pool" : undefined}
-      >
-        {revealed && (ok ? "✓ " : bad ? "✕ " : "")}
-        {it.text}
-      </motion.button>
-    );
-  };
+  function handleDragStart(itemId) {
+    setDragId(itemId);
+    setSelected(null);
+  }
+  function handleDrag(event, info) {
+    const [x, y] = pointFrom(event, info);
+    const z = zoneAtPoint(x, y);
+    setHoverZone((prev) => (prev === z ? prev : z));
+  }
+  function handleDragEnd(itemId, event, info) {
+    const [x, y] = pointFrom(event, info);
+    const z = zoneAtPoint(x, y);
+    if (z === POOL_ZONE) unassign(itemId);
+    else if (z) assign(itemId, z);
+    setDragId(null);
+    setHoverZone(null);
+  }
 
   return (
     <div className="space-y-4">
       {!revealed && (
         <p className="text-xs text-slate-400">
-          Drag each item into a group — or tap an item then tap a group. Click an
+          Drag each item into a group — or tap an item then tap a group. Tap an
           item in a group to send it back.
         </p>
       )}
 
       {/* pool */}
       <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          if (!revealed) setDragOverId("pool");
-        }}
-        onDragLeave={() => setDragOverId(null)}
-        onDrop={() => {
-          if (dragId) unassign(dragId);
-          setDragOverId(null);
-        }}
+        data-dropzone={POOL_ZONE}
         className={`min-h-[3rem] rounded-2xl border-2 border-dashed p-3 transition-colors ${
-          dragOverId === "pool"
+          dragId && hoverZone === POOL_ZONE
             ? "border-slate-400 bg-slate-100"
             : "border-slate-200 bg-slate-50/60"
         }`}
@@ -604,7 +641,19 @@ function DndBlock({ q, placements, revealed, onChange }) {
         ) : (
           <div className="flex flex-wrap gap-2">
             {pool.map((it) => (
-              <Token key={it.id} it={it} inTarget={false} />
+              <DndToken
+                key={it.id}
+                it={it}
+                revealed={revealed}
+                placements={placements}
+                selected={selected === it.id}
+                dragging={dragId === it.id}
+                inTarget={false}
+                onDragStart={handleDragStart}
+                onDrag={handleDrag}
+                onDragEnd={handleDragEnd}
+                onTap={tap}
+              />
             ))}
           </div>
         )}
@@ -615,28 +664,34 @@ function DndBlock({ q, placements, revealed, onChange }) {
         {q.targets.map((t) => (
           <div
             key={t.id}
-            onDragOver={(e) => {
-              e.preventDefault();
-              if (!revealed) setDragOverId(t.id);
-            }}
-            onDragLeave={() => setDragOverId(null)}
-            onDrop={() => {
-              if (dragId) assign(dragId, t.id);
-              setDragOverId(null);
-            }}
+            data-dropzone={t.id}
             onClick={() => selected && assign(selected, t.id)}
             className={`rounded-2xl border-2 p-3 transition-colors ${
-              dragOverId === t.id
-                ? "border-violet-400 bg-violet-50"
+              dragId && hoverZone === t.id
+                ? "border-violet-400 bg-violet-50 ring-2 ring-violet-200"
                 : selected && !revealed
                 ? "border-violet-300 bg-violet-50/40"
                 : "border-slate-200 bg-white"
             }`}
           >
-            <p className="mb-2 text-sm font-semibold text-slate-700">{t.label}</p>
+            <p className="pointer-events-none mb-2 text-sm font-semibold text-slate-700">
+              {t.label}
+            </p>
             <div className="flex min-h-[2rem] flex-wrap gap-2">
               {itemsIn(t.id).map((it) => (
-                <Token key={it.id} it={it} inTarget />
+                <DndToken
+                  key={it.id}
+                  it={it}
+                  revealed={revealed}
+                  placements={placements}
+                  selected={selected === it.id}
+                  dragging={dragId === it.id}
+                  inTarget
+                  onDragStart={handleDragStart}
+                  onDrag={handleDrag}
+                  onDragEnd={handleDragEnd}
+                  onTap={tap}
+                />
               ))}
             </div>
           </div>
