@@ -8,7 +8,7 @@ import { mixedQuiz } from "./mixedQuiz.js"; // Mixed Quiz
 import { estimationQuiz } from "./estimationQuiz.js"; // Estimation Techniques — Hard (Calculations)
 import { estimationTheoryQuiz } from "./estimationTheoryQuiz.js"; // Estimation Techniques — Theory
 import { processGroupsQuiz } from "./processGroupsQuiz.js"; // PMI Process Groups (drag & drop)
-
+import { quizPart1 } from "./quizPart1.js"; // Part 1: Introduction to Project Management
 export const quizzes = [
   jacobsenQuiz,
   waterfallQuiz,
@@ -18,6 +18,7 @@ export const quizzes = [
   estimationTheoryQuiz,
   estimationQuiz,
   processGroupsQuiz,
+  quizPart1,
 ];
 
 /** Flatten a quiz's sections into a single ordered question list, each tagged
