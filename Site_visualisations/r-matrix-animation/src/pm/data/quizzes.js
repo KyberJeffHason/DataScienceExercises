@@ -11,6 +11,7 @@ import { processGroupsQuiz } from "./processGroupsQuiz.js"; // PMI Process Group
 import { activeRecallQuiz } from "./activeRecallQuiz.js"; // Sampler: multi/text/cloze/matrix/recall
 import { quizPart1 } from "./quizPart1.js"; // Part 1: Introduction to Project Management
 import { quizPart2 } from "./quizPart2.js"; // Part 2: PMI Framework, Lifecycle and Project Success
+import { quizPart3 } from "./quizPart3.js"; // Part 3: Project Initiation Documents
 export const quizzes = [
   jacobsenQuiz,
   waterfallQuiz,
@@ -23,6 +24,7 @@ export const quizzes = [
   activeRecallQuiz,
   quizPart1,
   quizPart2,
+  quizPart3,
 ];
 
 /** Flatten a quiz's sections into a single ordered question list, each tagged
