@@ -869,43 +869,7 @@ export const quizPart1 = {
             o("D", "Because all projects are identical to daily operations.", false,
               "Projects and operations/processes differ in logic."),
           ],
-        },
-        dnd("q4",
-          "Final classification: drag each statement to the best concept.",
-          [
-            { id: "management", label: "Management" },
-            { id: "project", label: "Project" },
-            { id: "process", label: "Process" },
-            { id: "pm", label: "Project management" },
-          ],
-          [
-            {
-              id: "i1",
-              text: "Planning, organizing, leading, and controlling resources to achieve goals",
-              target: "management",
-              explanation: "This is the general management definition.",
-            },
-            {
-              id: "i2",
-              text: "A temporary endeavor creating a unique product, service, or result",
-              target: "project",
-              explanation: "This is the PMI-style project definition.",
-            },
-            {
-              id: "i3",
-              text: "Repetitive ongoing activities producing consistent results",
-              target: "process",
-              explanation: "This is the process definition.",
-            },
-            {
-              id: "i4",
-              text: "A framework for planning, executing, and controlling complex temporary work",
-              target: "pm",
-              explanation: "This applies management principles specifically to projects.",
-            },
-          ],
-          "If you can separate these four concepts, you understand the foundation of the module."
-        ),
+        }
       ],
     },
   ],
