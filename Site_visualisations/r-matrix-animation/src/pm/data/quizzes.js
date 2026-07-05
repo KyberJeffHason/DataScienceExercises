@@ -12,6 +12,7 @@ import { activeRecallQuiz } from "./activeRecallQuiz.js"; // Sampler: multi/text
 import { quizPart1 } from "./quizPart1.js"; // Part 1: Introduction to Project Management
 import { quizPart2 } from "./quizPart2.js"; // Part 2: PMI Framework, Lifecycle and Project Success
 import { quizPart3 } from "./quizPart3.js"; // Part 3: Project Initiation Documents
+import { finalExamRevision } from "./finalExamRevision.js"; // Final Exam Revision
 export const quizzes = [
   jacobsenQuiz,
   waterfallQuiz,
@@ -25,6 +26,7 @@ export const quizzes = [
   quizPart1,
   quizPart2,
   quizPart3,
+  finalExamRevision,
 ];
 
 /** Flatten a quiz's sections into a single ordered question list, each tagged
